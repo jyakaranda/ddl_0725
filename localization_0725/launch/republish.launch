@@ -1,0 +1,5 @@
+<launch>
+
+    <node pkg="image_transport" type="republish" name="republish_left"
+        args="compressed in:=/zed/left/image_rect_color/compressed raw out:=/zed/left/image_rect_color" />
+</launch>

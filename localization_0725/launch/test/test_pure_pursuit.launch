@@ -1,0 +1,12 @@
+<launch>
+  <node pkg="localization_0725" type="pure_pursuit.py" name="pure_pursuit">
+    <remap from="/odom" to="/pf/odom" />
+    <remap from="/trajectory" to="/smoothed_path" />
+
+    <param name="lookahead" value="1.5" />
+    <param name="max_reaquire" value="3.0" />
+    <param name="speed" value="1.5" />
+    <param name="wrap" value="0" />
+    <param name="wheelbase" value="0.335" />
+  </node>
+</launch>

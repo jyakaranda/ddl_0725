@@ -1,0 +1,16 @@
+<launch>
+    <!-- <include file="$(find loam_velodyne)/launch/loam_velodyne.launch" />
+    <include file="$(find get_2d_map)/launch/loam_to_2d.launch" /> -->
+
+	<!-- <node pkg="tf" type="static_transform_p/ublisher" name="laser_base_link"
+	    args="0.17 0.00 0.07 0 0 0 base_link laser 50" /> -->
+    
+    <node pkg="gmapping" type="slam_gmapping" name="gmapping">
+        <remap from="/scan" to="/scan" />
+        <rosparam file="$(find localization_0725)/params/build_map.yaml" command="load" />
+    </node>
+    <node pkg="tf" type="static_transform_publisher" name="laser_base_link"
+	    args="0.0 0.0 0.0 0 0 0 1 base_link laser 100" />
+
+    <!-- rosbag play -clock 0802_1000_all_4.bag -->
+</launch>

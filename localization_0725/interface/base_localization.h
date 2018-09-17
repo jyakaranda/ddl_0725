@@ -25,44 +25,49 @@
 #include <memory>
 
 #include "tf2_ros/transform_broadcaster.h"
-
-#include "modules/localization/proto/localization.pb.h"
-
-#include "modules/common/status/status.h"
+#include <geometry_msgs/PoseWithCovariance.h>
 
 /**
  * @namespace apollo::localization
  * @brief apollo::localization
  */
-namespace localization {
+namespace localization
+{
 
 /**
  * @class LocalizationBase
  *
  * @brief base class for Localization factory
  */
-class LocalizationBase {
- public:
+class LocalizationBase
+{
+public:
   virtual ~LocalizationBase() = default;
+
+  /**
+   * @brief module init function
+   * @return init status
+   */
+  virtual bool init() = 0;
 
   /**
    * @brief module start function
    * @return start status
    */
-  virtual apollo::common::Status Start() = 0;
+  virtual bool run() = 0;
 
   /**
    * @brief module stop function
    * @return stop status
    */
-  virtual apollo::common::Status Stop() = 0;
+  virtual bool stop() = 0;
 
-  void PublishPoseBroadcastTF(const LocalizationEstimate &localization);
+  void publishPoseBroadcastTF(const geometry_msgs::PoseWithCovarianceConstPtr localization);
 
- protected:
+protected:
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf2_broadcaster_;
 };
 
-}  // namespace localization
+} // namespace localization
 
-#endif  // MODULES_LOCALIZATION_LOCALIZATION_BASE_H_
+#endif // MODULES_LOCALIZATION_LOCALIZATION_BASE_H_

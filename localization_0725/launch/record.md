@@ -1,0 +1,1 @@
+rosbag record --output-name=0808_1000_all --buffsize=0 /tf /tf_static /lslidar_point_cloud /scan /integrated_to_init /odom /laser_scan

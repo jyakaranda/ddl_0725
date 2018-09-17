@@ -1,0 +1,18 @@
+<launch>
+
+    <param name="use_sim_time" value="true" />
+
+    <node pkg="map_server" type="map_server" name="map_server" args="$(find localization_0725)/test_data/test_map.yaml">
+    </node>
+
+    <node pkg="localization_0725" type="pf_node" name="pf_node" output="screen">
+        <remap from="scan" to="r1/front_laser/scan" />
+        <remap from="odom" to="r1/odom" />
+        <rosparam file="$(find localization_0725)/params/test_params.yaml" command="load" />
+    </node>
+
+    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find localization_0725)/rviz/test_rviz.rviz"/>
+
+    <node pkg="rosbag" type="play" name="player" output="screen" args="--clock $(find localization_0725)/test_data/test_bag.bag --topics /r1/front_laser/scan /r1/odom" />
+
+</launch>

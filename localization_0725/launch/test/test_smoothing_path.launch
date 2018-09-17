@@ -1,0 +1,15 @@
+<launch>
+
+  <node pkg="map_server" type="map_server" name="map_server" args="$(find localization_0725)/test_data/basement_0808_.yaml" />
+  <node pkg="localization_0725" type="trajectory_loader.py" name="trajectory_loader">
+    <param name="trajectory" value="/home/lenovo/zh/workspace/catkin_ws/src/ddl_0725/localization_0725/trajectories/2018-08-09-16-16-58.traj" />
+  </node>
+
+  <node pkg="localization_0725" type="smoothing_path.py" name="smoothing_path" output="screen">
+    <remap from="/raw_path" to="/loaded_trajectory/recorded_path" />
+    <param name="tolerance" value="0.001" />
+    <param name="iterations" value="50" />
+    <param name="min_point_dist" value="0.5" />
+    <param name="margin" value="1.0" />
+  </node>
+</launch>

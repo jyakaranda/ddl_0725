@@ -32,22 +32,34 @@ private:
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
 
+  tf::TransformBroadcaster tf_broadcaster_;
+  tf::TransformListener tf_listener_;
+
   ros::Publisher pub_current_pose_;
   geometry_msgs::PoseStamped msg_current_pose_;
 
   ros::Subscriber sub_odom_;
   ros::Subscriber sub_map_;
   ros::Subscriber sub_initial_pose_;
+  ros::Subscriber sub_point_cloud_;
 
   pose current_pose_;
+  pose current_odom_pose_;
   pose pre_pose_;
   pose initial_pose_;
 
   bool pose_init_;
 
+  std::string param_odom_frame_;
+  std::string param_map_frame_;
+  std::string param_base_frame_;
+  std::string param_laser_frame_;
+  double param_tf_timeout_;
+
   void odomCB(const nav_msgs::Odometry::ConstPtr &msg);
   void mapCB(const sensor_msgs::PointCloud2::ConstPtr &msg);
   void initialPoseCB(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg);
+  void pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg);
 };
 
 #endif

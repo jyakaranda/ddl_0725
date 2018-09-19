@@ -15,7 +15,7 @@
    <!-- <include file="$(find loam_velodyne)/launch/loam_velodyne.launch" />
    <include file="$(find get_2d_map)/launch/loam_to_2d.launch" /> -->
 
-    <node pkg="localization_0725" type="pc2scan_rt" name="pc2scan">
+    <node pkg="pf_localization" type="pc2scan_rt" name="pc2scan">
         <param name="pc_topic" type="string" value="/lslidar_point_cloud" />
         <param name="scan_topic" type="string" value="/laser_scan" />
     </node>

@@ -1,0 +1,7 @@
+<launch>
+    <node pkg="pf_localization" type="pf_node" name="pf_node" output="screen">
+        <remap from="scan" to="r1/front_laser/scan" />
+        <remap from="odom" to="r1/odom" />
+        <rosparam file="$(find pf_localization)/params/pf_params.yaml" command="load" />
+    </node>
+</launch>

@@ -7,7 +7,7 @@
     
     <node pkg="gmapping" type="slam_gmapping" name="gmapping">
         <remap from="/scan" to="/scan" />
-        <rosparam file="$(find localization_0725)/params/build_map.yaml" command="load" />
+        <rosparam file="$(find pf_localization)/params/build_map.yaml" command="load" />
     </node>
     <node pkg="tf" type="static_transform_publisher" name="laser_base_link"
 	    args="0.0 0.0 0.0 0 0 0 1 base_link laser 100" />

@@ -1,5 +1,5 @@
 <launch>
-  <node pkg="localization_0725" type="pure_pursuit.py" name="pure_pursuit">
+  <node pkg="pf_localization" type="pure_pursuit.py" name="pure_pursuit">
     <remap from="/odom" to="/pf/odom" />
     <remap from="/trajectory" to="/smoothed_path" />
 

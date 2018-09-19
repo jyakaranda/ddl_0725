@@ -9,16 +9,16 @@
         <param name="odom_frame" type="string" value="/odom" />
         <param name="laser_frame" type="string" value="/laser" />
     </node>
-    <node pkg="localization_0725" type="pc2scan_rt" name="pc2scan">
+    <node pkg="pf_localization" type="pc2scan_rt" name="pc2scan">
         <remap from="/scan" to="/laser_scan" />
     </node>
 
-    <node pkg="map_server" type="map_server" name="map_server" args="$(find localization_0725)/test_data/base_map_1.yaml" />
+    <node pkg="map_server" type="map_server" name="map_server" args="$(find pf_localization)/test_data/base_map_1.yaml" />
 
-    <node pkg="localization_0725" type="pf_node" name="pf_node" output="screen">
+    <node pkg="pf_localization" type="pf_node" name="pf_node" output="screen">
         <remap from="scan" to="/laser_scan" />
         <remap from="odom" to="/odom" />
-        <rosparam file="$(find localization_0725)/params/pf_params1.yaml" command="load" />
+        <rosparam file="$(find pf_localization)/params/pf_params1.yaml" command="load" />
     </node>
 
 </launch>

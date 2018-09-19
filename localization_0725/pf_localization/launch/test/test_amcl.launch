@@ -3,7 +3,7 @@ setting pose: 30.329 34.644 3.142
 117.5s -->
 <launch>
     <param name="/use_sim_time" value="true"/>
-    <node name="map_server" pkg="map_server" type="map_server" args="$(find localization_0725)/test_data/basement_0808_.yaml"/>
+    <node name="map_server" pkg="map_server" type="map_server" args="$(find pf_localization)/test_data/basement_0808_.yaml"/>
     <node pkg="amcl" type="amcl" name="amcl" respawn="false" output="screen">
       <param name="transform_tolerance" value="0.2" />
       <param name="gui_publish_rate" value="10.0"/>

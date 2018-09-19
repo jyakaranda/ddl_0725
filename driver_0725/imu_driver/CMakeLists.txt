@@ -1,26 +1,21 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(pf_localization)
+project(imu_driver)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++11)
+# add_compile_options(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
-  tf
+  rospy
   sensor_msgs
-  geometry_msgs
-  nav_msgs
   std_msgs
-  rosbag
 )
 
-
 ## System dependencies are found with CMake's conventions
-find_package(Boost REQUIRED COMPONENTS system)
-find_package(PCL REQUIRED)
+# find_package(Boost REQUIRED COMPONENTS system)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -109,10 +104,10 @@ find_package(PCL REQUIRED)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS include
-  LIBRARIES 
-  CATKIN_DEPENDS roscpp tf sensor_msgs geometry_msgs nav_msgs std_msgs rosbag
-  DEPENDS system_lib PCL
+#  INCLUDE_DIRS include
+#  LIBRARIES imu_driver
+#  CATKIN_DEPENDS roscpp rospy sensor_msgs std_msgs
+#  DEPENDS system_lib
 )
 
 ###########
@@ -123,72 +118,13 @@ catkin_package(
 ## Your package locations should be listed before other locations
 include_directories(
   include
-  include/pf_localization/pf
-  include/pf_localization/range_libc
-  include/pf_localization/range_libc/includes
-  interface
   ${catkin_INCLUDE_DIRS}
-  ${Boost_INCLUDE_DIRS}
-  ${PCL_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
-
-string(REPLACE ":" ";" LD_LIBRARY_DIRS $ENV{LD_LIBRARY_PATH})
-link_directories(${LD_LIBRARY_DIRS})
-
-add_library(pf_localization
-  src/pf_localization.cpp
-)
-add_dependencies(pf_localization
-  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
-)
-target_link_libraries(pf_localization
-  ${catkin_LIBRARIES} ${Boost_LIBRARIES} amcl_pf
-)
-
-add_executable(pf_node
-  src/main.cpp
-)
-add_dependencies(pf_node
-  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
-)
-target_link_libraries(pf_node
-  pf_localization
-  ${catkin_LIBRARIES}
-  ${Boost_LIBRARIES}
-)
-
-add_executable(pc2scan
-  tools/pc2scan.cpp
-)
-add_dependencies(pc2scan
-  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
-)
-target_link_libraries(pc2scan
-  ${catkin_LIBRARIES}
-  ${PCL_LIBRARIES}
-)
-
-add_executable(pc2scan_rt
-  tools/pc2scan_rt.cpp
-)
-add_dependencies(pc2scan_rt
-  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}  
-)
-target_link_libraries(pc2scan_rt
-  ${catkin_LIBRARIES}
-  ${PCL_LIBRARIES}
-)
-
-add_executable(ndt_test
-  src/ndt_test.cpp
-)
-
-target_link_libraries(ndt_test
-  ${catkin_LIBRARIES}
-  ${PCL_LIBRARIES}
-)
+# add_library(${PROJECT_NAME}
+#   src/${PROJECT_NAME}/imu_driver.cpp
+# )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -198,7 +134,7 @@ target_link_libraries(ndt_test
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/ethernet_test_node.cpp)
+# add_executable(${PROJECT_NAME}_node src/imu_driver_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -214,6 +150,43 @@ target_link_libraries(ndt_test
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
+
+add_library(itg3205
+  src/itg3205.cpp
+)
+
+add_dependencies(itg3205
+  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
+)
+
+target_link_libraries(itg3205
+  ${catkin_LIBRARIES}
+)
+
+add_library(adxl345
+  src/adxl345.cpp
+)
+
+add_dependencies(adxl345
+  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
+)
+
+target_link_libraries(adxl345
+  ${catkin_LIBRARIES}
+)
+
+add_executable(imu_driver_node
+  src/driver_node.cpp
+)
+
+add_dependencies(imu_driver_node
+  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
+)
+target_link_libraries(imu_driver_node
+  itg3205
+  adxl345
+  ${catkin_LIBRARIES}
+)
 
 #############
 ## Install ##
@@ -255,7 +228,7 @@ target_link_libraries(ndt_test
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_ethernet_test.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_imu_driver.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

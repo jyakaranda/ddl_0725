@@ -59,7 +59,7 @@ void NDTLocalization::odomCB(const nav_msgs::Odometry::ConstPtr &msg)
  */
 void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg)
 {
-  // TODO: main function
+  // TODO main function
 
   // publish map->odom using map->laser and odom->laser
   tf::StampedTransform transform1;
@@ -71,7 +71,7 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg
   catch (const tf::TransformException &ex)
   {
     ROS_ERROR("Long time waiting for tf in pointCloudCB: %s", ex.what());
-    // TODO: do some stuff
+    // TODO do some stuff
     return;
   }
   tf::Transform transform2(tf::Quaternion(1, 2, 3, 4), tf::Vector3(1, 2, 3));

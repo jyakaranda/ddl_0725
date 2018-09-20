@@ -2,6 +2,7 @@
 #define __USER_PROTOCOL__
 
 #include <geometry_msgs/Pose.h>
+#include <tf/tf.h>
 
 typedef struct
 {
@@ -24,7 +25,7 @@ bool pose2GeometryPose(geometry_msgs::Pose to, const pose from)
 {
   to.position.x = from.x;
   to.position.y = from.y;
-  to.position.z = from.z
+  to.position.z = from.z;
   to.orientation = tf::createQuaternionMsgFromRollPitchYaw(from.roll, from.pitch, from.yaw);
 
   return true;

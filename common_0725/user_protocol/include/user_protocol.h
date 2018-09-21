@@ -4,11 +4,40 @@
 #include <geometry_msgs/Pose.h>
 #include <tf/tf.h>
 
-typedef struct
+struct pose
 {
   double x, y, z;
   double pitch, roll, yaw;
-} pose;
+  pose() {}
+  pose(double x, double y, double z, double roll, double pitch, double yaw) : x(x), y(y), z(z), roll(roll), pitch(pitch), yaw(yaw)
+  {
+  }
+  void reset()
+  {
+    x = 0.;
+    y = 0.;
+    z = 0.;
+    roll = 0.;
+    pitch = 0.;
+    yaw = 0.;
+  }
+  pose operator+(const pose &b) const
+  {
+    return pose(x + b.x, y + b.y, z + b.z, roll + b.roll, pitch + b.pitch, yaw + b.yaw);
+  }
+  pose operator-(const pose &b) const
+  {
+    return pose(x - b.x, y - b.y, z - b.z, roll - b.roll, pitch - b.pitch, yaw - b.yaw);
+  }
+  pose operator+=(const pose &b)
+  {
+    return *this + b;
+  }
+  pose operator-=(const pose &b)
+  {
+    return *this - b;
+  }
+};
 
 bool geometryPose2Pose(const geometry_msgs::Pose from, pose &to)
 {

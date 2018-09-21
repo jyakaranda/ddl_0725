@@ -181,14 +181,6 @@ target_link_libraries(pc2scan_rt
   ${PCL_LIBRARIES}
 )
 
-add_executable(ndt_test
-  src/ndt_test.cpp
-)
-
-target_link_libraries(ndt_test
-  ${catkin_LIBRARIES}
-  ${PCL_LIBRARIES}
-)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries

@@ -151,6 +151,27 @@ target_link_libraries(ndt_localization_node
   ndt_localization
 )
 
+add_executable(ndt_test
+  src/ndt_test.cpp
+)
+
+target_link_libraries(ndt_test
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
+)
+
+add_executable(tf_test
+  src/tf_test.cpp
+)
+
+add_dependencies(tf_test
+  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
+)
+
+target_link_libraries(tf_test
+  ${catkin_LIBRARIES}
+)
+
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/ndt_localization.cpp

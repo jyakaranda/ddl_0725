@@ -80,6 +80,11 @@ private:
   pthread_mutex_t mutex;
 
   pcl::NormalDistributionsTransform<PointT, PointT> ndt_;
+  bool has_converged_;
+  double fitness_score_;
+  double trans_probability_;
+  int iteration_;
+  double predict_pose_error_;
 
   std::string param_odom_frame_;
   std::string param_map_frame_;
@@ -87,6 +92,8 @@ private:
   std::string param_laser_frame_;
   double param_tf_timeout_;
   double param_odom_timeout_;
+  bool param_use_odom_;
+  double param_predict_error_thresh_;
 
   double param_ndt_resolution_;
   int param_ndt_max_iterations_;

@@ -21,6 +21,8 @@ bool NDTLocalization::init()
   pnh_.param<std::string>("laser_frame", param_laser_frame_, std::string("/laser"));
   pnh_.param<double>("tf_timeout", param_tf_timeout_, 0.05);
   pnh_.param<double>("odom_timeout", param_odom_timeout_, 1);
+  pnh_.param<bool>("use_odom", param_use_odom_, true);
+  pnh_.param<double>("predict_error_thresh", param_predict_error_thresh_, 0.5);
   pnh_.param<double>("ndt_resolution", param_ndt_resolution_, 1.0);
   pnh_.param<int>("ndt_max_iterations", param_ndt_max_iterations_, 25);
   pnh_.param<double>("ndt_step_size", param_ndt_step_size_, 0.1);
@@ -150,17 +152,22 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg
   PointCloudT::Ptr scan_ptr(new PointCloudT(scan));
   PointCloudT::Ptr output_cloud(new PointCloudT());
   Eigen::Matrix4f init_guess;
+  Eigen::Matrix4f final_tf;
+  Eigen::Matrix4f base_tf;
   pose predict_ndt_pose;
-  pose predict_pose;
+  pose ndt_pose;
 
   // TODO predict_ndt_pose
-  
+  if (param_use_odom_)
+  {
+    predict_ndt_pose = pre_pose_odom_;
+  }
 
   Eigen::Translation3f init_translation(predict_ndt_pose.x, predict_ndt_pose.y, predict_ndt_pose.z);
   Eigen::AngleAxisf init_rotation_x(predict_ndt_pose.roll, Eigen::Vector3f::UnitX());
   Eigen::AngleAxisf init_rotation_y(predict_ndt_pose.pitch, Eigen::Vector3f::UnitY());
   Eigen::AngleAxisf init_rotation_z(predict_ndt_pose.yaw, Eigen::Vector3f::UnitZ());
-  init_guess = (init_translation * init_rotation_z * init_rotation_y * init_rotation_x).matrix();
+  init_guess = (init_translation * init_rotation_z * init_rotation_y * init_rotation_x) * tf_btol_;
 
   std::chrono::time_point<std::chrono::system_clock> align_start, align_end, getFitnessScore_start, getFitnessScore_end;
 
@@ -169,22 +176,72 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg
 
   align_start = std::chrono::system_clock::now();
   ndt_.align(*output_cloud, init_guess);
+  align_end = std::chrono::system_clock::now();
+
+  final_tf = ndt_.getFinalTransformation();
+  has_converged_ = ndt_.hasConverged();
+  iteration_ = ndt_.getFinalNumIteration();
+  trans_probability_ = ndt_.getTransformationProbability();
+
+  getFitnessScore_start = std::chrono::system_clock::now();
+  fitness_score_ = ndt_.getFitnessScore();
+  getFitnessScore_end = std::chrono::system_clock::now();
+
+  ROS_INFO("NDT has converged: %d, iterations: %d, fitness_score: %f, trans_probability: %f", has_converged_, iteration_, fitness_score_, trans_probability_);
 
   pthread_mutex_unlock(&mutex);
 
-  // publish map->odom using map->laser and odom->laser
-  tf::StampedTransform transform1;
-  try
+  base_tf = final_tf * tf_btol_.inverse();
+  tf::Matrix3x3 mat_b;
+  mat_b.setValue(static_cast<double>(base_tf(0, 0)), static_cast<double>(base_tf(0, 1)), static_cast<double>(base_tf(0, 2)),
+                 static_cast<double>(base_tf(1, 0)), static_cast<double>(base_tf(1, 1)), static_cast<double>(base_tf(1, 2)),
+                 static_cast<double>(base_tf(2, 0)), static_cast<double>(base_tf(2, 1)), static_cast<double>(base_tf(2, 2)));
+
+  ndt_pose.x = base_tf(0, 3);
+  ndt_pose.y = base_tf(1, 3);
+  ndt_pose.z = base_tf(2, 3);
+  mat_b.getEulerYPR(ndt_pose.yaw, ndt_pose.pitch, ndt_pose.roll);
+
+  predict_pose_error_ = std::sqrt((ndt_pose.x - predict_ndt_pose.x) * (ndt_pose.x - predict_ndt_pose.x) +
+                                  (ndt_pose.y - predict_ndt_pose.y) * (ndt_pose.y - predict_ndt_pose.y) +
+                                  (ndt_pose.z - predict_ndt_pose.z) * (ndt_pose.z - predict_ndt_pose.z));
+  bool use_predict_pose;
+  if (predict_pose_error_ <= param_predict_error_thresh_)
   {
-    tf_listener_.waitForTransform(param_odom_frame_, param_laser_frame_, ros::Time(0), ros::Duration(param_tf_timeout_), ros::Duration(param_tf_timeout_ / 3));
-    tf_listener_.lookupTransform(param_odom_frame_, param_laser_frame_, ros::Time(0), transform1);
+    use_predict_pose = false;
   }
-  catch (const tf::TransformException &ex)
+  else
   {
-    ROS_ERROR("Error waiting for tf in pointCloudCB: %s", ex.what());
-    // TODO do some stuff
-    return;
+    use_predict_pose = true;
   }
-  tf::Transform transform2(tf::Quaternion(1, 2, 3, 4), tf::Vector3(1, 2, 3));
-  tf_broadcaster_.sendTransform(tf::StampedTransform(transform2 * transform1.inverse(), msg->header.stamp, param_map_frame_, param_odom_frame_));
+
+  if (use_predict_pose)
+  {
+    current_pose_ = ndt_pose;
+  }
+  else
+  {
+    current_pose_ = predict_ndt_pose;
+  }
+
+  pose2GeometryPose(msg_current_pose_.pose, current_pose_);
+  msg_current_pose_.header.stamp = msg->header.stamp;
+  msg_current_pose_.header.frame_id = param_map_frame_;
+  pub_current_pose_.publish(msg_current_pose_);
+
+  // // publish map->odom using map->laser and odom->laser
+  // tf::StampedTransform transform1;
+  // try
+  // {
+  //   tf_listener_.waitForTransform(param_odom_frame_, param_laser_frame_, ros::Time(0), ros::Duration(param_tf_timeout_), ros::Duration(param_tf_timeout_ / 3));
+  //   tf_listener_.lookupTransform(param_odom_frame_, param_laser_frame_, ros::Time(0), transform1);
+  // }
+  // catch (const tf::TransformException &ex)
+  // {
+  //   ROS_ERROR("Error waiting for tf in pointCloudCB: %s", ex.what());
+  //   // TODO do some stuff
+  //   return;
+  // }
+  // tf::Transform transform2(tf::Quaternion(1, 2, 3, 4), tf::Vector3(1, 2, 3));
+  // tf_broadcaster_.sendTransform(tf::StampedTransform(transform2 * transform1.inverse(), msg->header.stamp, param_map_frame_, param_odom_frame_));
 }

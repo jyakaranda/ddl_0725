@@ -1,0 +1,9 @@
+<launch>
+
+  <node pkg="pcl_sample" type="pcl_sample"  name="pcl_sample" output="screen">
+    <param name="target_param" value="/home/fengkai/catkin_ws/input1.pcd"  />
+    <param name="input_param" value="/home/fengkai/catkin_ws/input2.pcd"  />
+    <param name="input_param" value="/home/fengkai/catkin_ws/output.pcd"  />
+  </node>
+  
+</launch>

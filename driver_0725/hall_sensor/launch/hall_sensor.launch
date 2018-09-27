@@ -1,9 +1,11 @@
 <launch>
-  <include file="$(find ros_gpio_control)/launch/gpio.launch" />
+  <!-- <include file="$(find ros_gpio_control)/launch/gpio.launch" /> -->
   <node pkg="hall_sensor" type="hall_sensor_node" name="hall_sensor_node" output="screen">
-    <param name="mag_num" type="int" value="1" />
+    <param name="mag_num" type="int" value="4" />
     <param name="wheel_radius" type="double" value="0.075" />
     <param name="wheel_frame" type="string" value="/bl_wheel" />
-    <param name="rate" type="double" value="0.1" />
+    <param name="rate" type="double" value="0.35" />
+    <param name="Q" type="double" value="0.5" />
+    <param name="R" type="double" value="0.4" />
   </node>
 </launch>

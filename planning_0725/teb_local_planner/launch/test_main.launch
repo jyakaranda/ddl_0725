@@ -1,0 +1,6 @@
+<launch>
+
+        <!--- Run optimization test node -->
+        <node pkg="teb_local_planner" type="main" name="main" output="screen" />
+
+</launch>

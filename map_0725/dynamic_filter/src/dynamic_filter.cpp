@@ -12,6 +12,7 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/filters/passthrough.h>
+#include <pcl/kdtree/kdtree_flann.h>
 #include <cstring>
 using namespace std;
 
@@ -20,12 +21,13 @@ typedef pcl::PointCloud<pcl::PointXYZI>::Ptr PointCloudPtr;
 void function(PointCloudPtr target_cloud, PointCloudPtr input_cloud, PointCloudPtr cloud_add, PointCloudPtr cloud_static)
 {
 
-    pcl::PointCloud<pcl::PointXYZI>::Ptr input_cloud_avg(new pcl::PointCloud<pcl::PointXYZI>);
-    pcl::PointCloud<pcl::PointXYZI>::Ptr target_cloud_avg(new pcl::PointCloud<pcl::PointXYZI>);
-    pcl::PointCloud<pcl::PointXYZI>::Ptr input_cloud_sor(new pcl::PointCloud<pcl::PointXYZI>);
-    pcl::PointCloud<pcl::PointXYZI>::Ptr target_cloud_sor(new pcl::PointCloud<pcl::PointXYZI>);
+    PointCloudPtr input_cloud_avg(new pcl::PointCloud<pcl::PointXYZI>);
+    PointCloudPtr target_cloud_avg(new pcl::PointCloud<pcl::PointXYZI>);
+    PointCloudPtr input_cloud_sor(new pcl::PointCloud<pcl::PointXYZI>);
+    PointCloudPtr target_cloud_sor(new pcl::PointCloud<pcl::PointXYZI>);
 
-    pcl::PointCloud<pcl::PointXYZI>::Ptr output_cloud(new pcl::PointCloud<pcl::PointXYZI>);
+    PointCloudPtr output_cloud(new pcl::PointCloud<pcl::PointXYZI>);
+    PointCloudPtr cloud_dynamic(new pcl::PointCloud<pcl::PointXYZI>);
 
     pcl::StatisticalOutlierRemoval<pcl::PointXYZI> input_sor;
     pcl::ApproximateVoxelGrid<pcl::PointXYZI> input_avg;
@@ -34,11 +36,11 @@ void function(PointCloudPtr target_cloud, PointCloudPtr input_cloud, PointCloudP
     pcl::StatisticalOutlierRemoval<pcl::PointXYZI> cloud_add_sor;
 
     input_avg.setInputCloud(input_cloud);
-    input_avg.setLeafSize(0.8, 0.8, 0.8);
+    input_avg.setLeafSize(1, 1, 1);
     input_avg.filter(*input_cloud_avg);
 
     target_avg.setInputCloud(target_cloud);
-    target_avg.setLeafSize(1, 1, 1);
+    target_avg.setLeafSize(0.8, 0.8, 0.8);
     target_avg.filter(*target_cloud_avg);
 
     input_sor.setInputCloud(input_cloud_avg);
@@ -72,12 +74,12 @@ void function(PointCloudPtr target_cloud, PointCloudPtr input_cloud, PointCloudP
     Eigen::Matrix4f init_guess = (init_translation * init_rotation).matrix();
 
     ndt.align(*output_cloud, init_guess);
-    ROS_INFO("target_cloud red=%d", target_cloud_sor->size());
+    ROS_INFO("target_cloud red=%zu", target_cloud_sor->size());
 
     pcl::transformPointCloud(*input_cloud_sor, *output_cloud, ndt.getFinalTransformation());
 
-    ROS_INFO("input_cloud green=%d", input_cloud_sor->size());
-    ROS_INFO("output_cloud blue=%d", output_cloud->size());
+    ROS_INFO("input_cloud green=%zu", input_cloud_sor->size());
+    ROS_INFO("output_cloud blue=%zu", output_cloud->size());
 
     *cloud_add = *output_cloud + *target_cloud_sor;
 
@@ -85,6 +87,23 @@ void function(PointCloudPtr target_cloud, PointCloudPtr input_cloud, PointCloudP
     cloud_add_sor.setMeanK(100);
     cloud_add_sor.setStddevMulThresh(0.3);
     cloud_add_sor.filter(*cloud_static);
+
+    pcl::KdTreeFLANN<pcl::PointXYZI> kdtree;
+    kdtree.setInputCloud(cloud_add);
+    int K = 100;
+    for (size_t i = 0; i < cloud_add->size(); ++i)
+    {
+        std::vector<int> pointIdxNKNSearch(K);
+        std::vector<float> pointNKNSquaredDistance(K);
+        cloud_add->points[i].intensity = 0;
+        if (kdtree.nearestKSearch(cloud_add->points[i], K, pointIdxNKNSearch, pointNKNSquaredDistance) > 0)
+        {
+            for (size_t j = 0; j < pointIdxNKNSearch.size(); ++j)
+            {
+                cloud_add->points[i].intensity += pointNKNSquaredDistance[j];
+            }
+        }
+    }
 
     return;
 
@@ -141,7 +160,7 @@ int main(int argc, char **argv)
         std::cerr << target_param << std::endl;
         return -1;
     }
-    ROS_INFO("load target_cloud = %d", target_cloud->size());
+    ROS_INFO("load target_cloud = %zu", target_cloud->size());
     pcl::PointCloud<pcl::PointXYZI>::Ptr input_cloud(new pcl::PointCloud<pcl::PointXYZI>);
     if (pcl::io::loadPCDFile<pcl::PointXYZI>(input_param, *input_cloud) == -1)
     {
@@ -149,7 +168,7 @@ int main(int argc, char **argv)
         std::cerr << input_param << std::endl;
         return -1;
     }
-    ROS_INFO("load input_cloud = %d", input_cloud->size());
+    ROS_INFO("load input_cloud = %zu", input_cloud->size());
     pcl::PointCloud<pcl::PointXYZI>::Ptr output_cloud(new pcl::PointCloud<pcl::PointXYZI>);
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_add(new pcl::PointCloud<pcl::PointXYZI>);
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_static(new pcl::PointCloud<pcl::PointXYZI>);
@@ -164,6 +183,6 @@ int main(int argc, char **argv)
 
     //打印输出存储的点云数据
     std::cerr << "Saved " << cloud_static->size() << " data points to cloud_static.pcd." << std::endl;
-
+    ros::spin();
     return 0;
 }

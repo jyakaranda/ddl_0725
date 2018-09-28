@@ -15,7 +15,9 @@
 #include <cstring>
 using namespace std;
 
-pcl::PointCloud<pcl::PointXYZI>::Ptr function(pcl::PointCloud<pcl::PointXYZI>::Ptr target_cloud, pcl::PointCloud<pcl::PointXYZI>::Ptr input_cloud)
+typedef pcl::PointCloud<pcl::PointXYZI>::Ptr PointCloudPtr;
+
+void function(PointCloudPtr target_cloud, PointCloudPtr input_cloud, PointCloudPtr cloud_add, PointCloudPtr cloud_static)
 {
 
     pcl::PointCloud<pcl::PointXYZI>::Ptr input_cloud_avg(new pcl::PointCloud<pcl::PointXYZI>);
@@ -24,13 +26,12 @@ pcl::PointCloud<pcl::PointXYZI>::Ptr function(pcl::PointCloud<pcl::PointXYZI>::P
     pcl::PointCloud<pcl::PointXYZI>::Ptr target_cloud_sor(new pcl::PointCloud<pcl::PointXYZI>);
 
     pcl::PointCloud<pcl::PointXYZI>::Ptr output_cloud(new pcl::PointCloud<pcl::PointXYZI>);
-    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_add(new pcl::PointCloud<pcl::PointXYZI>);
-    pcl::PointCloud<pcl::PointXYZI>::Ptr pass_cloud(new pcl::PointCloud<pcl::PointXYZI>);
 
     pcl::StatisticalOutlierRemoval<pcl::PointXYZI> input_sor;
     pcl::ApproximateVoxelGrid<pcl::PointXYZI> input_avg;
     pcl::StatisticalOutlierRemoval<pcl::PointXYZI> target_sor;
     pcl::ApproximateVoxelGrid<pcl::PointXYZI> target_avg;
+    pcl::StatisticalOutlierRemoval<pcl::PointXYZI> cloud_add_sor;
 
     input_avg.setInputCloud(input_cloud);
     input_avg.setLeafSize(0.8, 0.8, 0.8);
@@ -80,7 +81,12 @@ pcl::PointCloud<pcl::PointXYZI>::Ptr function(pcl::PointCloud<pcl::PointXYZI>::P
 
     *cloud_add = *output_cloud + *target_cloud_sor;
 
-    return cloud_add;
+    cloud_add_sor.setInputCloud(cloud_add);
+    cloud_add_sor.setMeanK(100);
+    cloud_add_sor.setStddevMulThresh(0.3);
+    cloud_add_sor.filter(*cloud_static);
+
+    return;
 
     boost::shared_ptr<pcl::visualization::PCLVisualizer>
         viewer_final(new pcl::visualization::PCLVisualizer("3D Viewer"));
@@ -123,14 +129,16 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "pcl_sample");
     ros::NodeHandle nh;
-    string s1,s2,s3;
-    nh.param<string>("target_param", s1, "input1.pcd");
-    nh.param<string>("input_param", s2, "input2.pcd");
-    nh.param<string>("output_param",s3,"output.pcd");
+    string s1, s2, s3, s4;
+    if (!nh.getParam("target_param", s1))
+        s1 = "input1.pcd";
+    if (!nh.getParam("input_param", s2))
+        s2 = "input2.pcd";
     pcl::PointCloud<pcl::PointXYZI>::Ptr target_cloud(new pcl::PointCloud<pcl::PointXYZI>);
     if (pcl::io::loadPCDFile<pcl::PointXYZI>(s1, *target_cloud) == -1)
     {
         ROS_ERROR("Couldn't read file target_cloud \n");
+        std::cerr << s1 << std::endl;
         return -1;
     }
     ROS_INFO("load target_cloud = %d", target_cloud->size());
@@ -138,16 +146,24 @@ int main(int argc, char **argv)
     if (pcl::io::loadPCDFile<pcl::PointXYZI>(s2, *input_cloud) == -1)
     {
         ROS_ERROR("Couldn't read file input_cloud.pcd \n");
+        std::cerr << s2 << std::endl;
         return -1;
     }
     ROS_INFO("load input_cloud = %d", input_cloud->size());
-    pcl::PointCloud<pcl::PointXYZI>::Ptr output_cloud(new pcl::PointCloud<pcl::PointXYZI>) ;
-    output_cloud = function(target_cloud,input_cloud);
-    //把PointCloud对象数据存储在 test_pcd.pcd文件中
-    pcl::io::savePCDFileASCII("test.pcd", *output_cloud);
+    pcl::PointCloud<pcl::PointXYZI>::Ptr output_cloud(new pcl::PointCloud<pcl::PointXYZI>);
+    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_add(new pcl::PointCloud<pcl::PointXYZI>);
+    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_static(new pcl::PointCloud<pcl::PointXYZI>);
+    function(target_cloud, input_cloud, cloud_add, cloud_static);
+
+    //把PointCloud对象数据存储在 test.pcd文件中
+    pcl::io::savePCDFileASCII(s3, *cloud_add);
+    //打印输出存储的点云数据
+    std::cerr << "Saved " << cloud_add->size() << " data points to cloud_add.pcd." << std::endl;
+
+    pcl::io::savePCDFileASCII(s4, *cloud_static);
 
     //打印输出存储的点云数据
-    std::cerr << "Saved " << output_cloud->size() << " data points to test_pcd.pcd." << std::endl;
+    std::cerr << "Saved " << cloud_static->size() << " data points to cloud_static.pcd." << std::endl;
 
     return 0;
 }

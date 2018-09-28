@@ -66,7 +66,7 @@ void hallSensorCB(const std_msgs::Bool::ConstPtr &msg)
   if ((now - start) > d)
   {
     count /= 2;
-    double raw_vel = count * PI * param_wheel_radius / (param_mag_num * (now - start).toSec());
+    double raw_vel = count * 2 * PI * param_wheel_radius / (param_mag_num * (now - start).toSec());
     kalmanFilter(pre_x, pre_p, raw_vel, cur_x, cur_p);
     if (std::fabs(pre_pre_x + pre_x + cur_x) < 0.0001)
     {

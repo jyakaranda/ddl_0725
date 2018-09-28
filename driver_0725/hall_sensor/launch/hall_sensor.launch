@@ -4,7 +4,7 @@
     <param name="mag_num" type="int" value="4" />
     <param name="wheel_radius" type="double" value="0.075" />
     <param name="wheel_frame" type="string" value="/bl_wheel" />
-    <param name="rate" type="double" value="0.35" />
+    <param name="rate" type="double" value="1.0" />
     <param name="Q" type="double" value="0.5" />
     <param name="R" type="double" value="0.4" />
   </node>

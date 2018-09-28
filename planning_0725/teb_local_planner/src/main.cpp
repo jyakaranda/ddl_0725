@@ -4,7 +4,7 @@
 #include <geometry_msgs/Twist.h>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
-
+#include <nav_msgs/OccupancyGrid.h>
 using namespace teb_local_planner;
 
 TebConfig config;
@@ -21,8 +21,7 @@ geometry_msgs::PoseStamped goal;//终点信息
 TebLocalPlannerROS teb_local;
 
 //订阅一个costmap的信息
-costmap_2d::Costmap2DROS* local_costmap_;
-
+costmap_2d::Costmap2DROS* local_costmap_, * global_costmap_;
 ros::Publisher vel_pub_;
 
 bool new_goal = false;
@@ -33,6 +32,7 @@ void CB_reconfigure(TebLocalPlannerReconfigureConfig& reconfig, uint32_t level);
 void GoalCB(const geometry_msgs::PoseStamped::ConstPtr& msg);
 void GlobalPlanCB(const nav_msgs::Path& msg);
 void LocalPlanCB(const ros::TimerEvent& e);
+//void LocalCostMapCB(const nav_msgs::OccupancyGrid& msg);
 void publishZero();
 void resetState();
 //void costmapCB(const ****& msg);
@@ -51,14 +51,19 @@ int main(int argc, char** argv)
     vel_pub_ = n.advertise<geometry_msgs::Twist>("cmd_vel",1);
     ros::Subscriber real_goal = n.subscribe("/move_base_simple/goal", 1, GoalCB);
     ros::Subscriber gl_planer = n.subscribe("global_plan",1,GlobalPlanCB);
+    
+    //ros::Subscriber local_grid = n.subscribe("local_costmap",1,LocalCostMapCB);
     //ros::Subscriber timed_costmap_ = n.subscribe("timed_costmap",1,costmapCB);
     global_plan = new std::vector<geometry_msgs::PoseStamped>();
     local_plan = new std::vector<geometry_msgs::PoseStamped>();
     latest_plan = new std::vector<geometry_msgs::PoseStamped>();
     
+    global_costmap_ = new costmap_2d::Costmap2DROS("global_costmap", *tf_);
+    global_costmap_->pause();
     local_costmap_ = new costmap_2d::Costmap2DROS("local_costmap", *tf_);
     local_costmap_->pause();
     teb_local.initialize("local_planner", tf_, local_costmap_);
+    global_costmap_->start();
     local_costmap_->start();
     ros::spin();
     return 0;
@@ -112,6 +117,7 @@ void LocalPlanCB(const ros::TimerEvent& e){
     }
 }
 
+
 void CB_reconfigure(TebLocalPlannerReconfigureConfig& reconfig, uint32_t level)
 {
     config.reconfigure(reconfig);
@@ -131,5 +137,3 @@ void resetState(){
     goal_reached = false;
     trajectory = false;
 }
-
-

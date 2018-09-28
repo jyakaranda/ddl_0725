@@ -44,8 +44,8 @@ void OdomEncoder::callback(const sensor_msgs::Imu::ConstPtr &imu_msg, const geom
   double vel_ang_z = imu_msg->angular_velocity.z;
   
   double vel_z;
-  double vel_ang_x;
-  double vel_ang_y;
+  double vel_ang_x = imu_msg->angular_velocity.x;
+  double vel_ang_y = imu_msg->angular_velocity.y;
   
   if (vel_ang_z > -0.01 && vel_ang_z < 0.01)
     vel_ang_z = 0;
@@ -56,8 +56,8 @@ void OdomEncoder::callback(const sensor_msgs::Imu::ConstPtr &imu_msg, const geom
   double delta_z_ang = vel_ang_z * diff_time;
   imu_z_delta += delta_z_ang * odom_angular_cali;
   
-  double vel_x = hall_msg->twist.linear.x * cos(imu_z_delta);
-  double vel_y = hall_msg->twist.linear.x * sin(imu_z_delta);
+  double vel_x = hall_msg->twist.linear.x;
+  double vel_y = 0;
   
   if (vel_x > -0.01 && vel_x < 0.01)
     vel_x = 0;
@@ -102,10 +102,10 @@ void OdomEncoder::callback(const sensor_msgs::Imu::ConstPtr &imu_msg, const geom
   odom.pose.pose.position.z = 0.0;
   odom.pose.pose.orientation = odom_quat;
   odom.twist.twist.linear.x = vel_x;
-  odom.twist.twist.linear.y = vel_y;
+  odom.twist.twist.linear.y = 0;
   odom.twist.twist.linear.z = 0;
-  odom.twist.twist.angular.x = 0;
-  odom.twist.twist.angular.y = 0;
+  odom.twist.twist.angular.x = vel_ang_x;
+  odom.twist.twist.angular.y = vel_ang_y;
   odom.twist.twist.angular.z = vel_ang_z;
 
 

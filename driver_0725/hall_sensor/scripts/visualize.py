@@ -16,9 +16,9 @@ def wheelCB(msg):
     p1 = plt.scatter(x, y2, s=75, c='r', marker='.', alpha=0.5)
     p2, = plt.plot(x, y1, lw=2, color='b')
     plt.legend([p1, p2], ['Measurements', 'Kalman filter'])
-    if msg.header.seq % 5 == 0:
-        plt.show()
-        plt.pause(0.05)
+    # if msg.header.seq % 5 == 0:
+    plt.show()
+    plt.pause(0.05)
     # if msg.header.seq % 100 == 0:
     #   x[:] = []
     #   y1[:] = []

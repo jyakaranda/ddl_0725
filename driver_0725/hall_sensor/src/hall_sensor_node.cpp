@@ -15,6 +15,7 @@ double param_wheel_radius;
 std::string param_wheel_frame;
 double param_Q;
 double param_R;
+double param_q;
 geometry_msgs::TwistStamped msg_twist;
 ros::Duration d;
 ros::Time start;
@@ -74,8 +75,16 @@ void hallSensorCB(const std_msgs::Bool::ConstPtr &msg)
     }
     else
     {
+      pre_pre_x = pre_x;
+      pre_x = cur_x;
+      pre_p = cur_p;
       // Smooth filter, in the premise that velocity won't change drastically.
       cur_x = (std::pow(pre_pre_x, 2) + std::pow(pre_x, 2) + std::pow(cur_x, 2)) / (pre_pre_x + pre_x + cur_x);
+      // double pre_pre_q = 1. / (std::fabs(cur_x - pre_pre_x) + param_q);
+      // double pre_q = 1. / (std::fabs(cur_x - pre_x) + param_q);
+      // double cur_q = 1. / param_q;
+      // double sum_q = pre_pre_q + pre_q + cur_q;
+      // cur_x = (pre_pre_q * pre_pre_x + pre_q * pre_x + cur_q * cur_x) / sum_q;
     }
     msg_twist.header.stamp = now;
     msg_twist.twist.linear.x = cur_x;
@@ -84,9 +93,6 @@ void hallSensorCB(const std_msgs::Bool::ConstPtr &msg)
     msg_twist.twist.angular.y = count;
     pub_circles.publish(msg_twist);
     ROS_INFO("count: %d", count);
-    pre_pre_x = pre_x;
-    pre_x = cur_x;
-    pre_p = cur_p;
     start = ros::Time::now();
     count = 0;
   }
@@ -108,6 +114,7 @@ int main(int argc, char **argv)
   // TODO need to be adjust for better filtering, just assigned based on experience for now.
   pnh.param<double>("Q", param_Q, 1.5);
   pnh.param<double>("R", param_R, 1.0);
+  pnh.param<double>("test", param_q, 0.1);
   param_Q = std::pow(param_mag_num * param_Q / 3.0, 2);
   param_R = std::pow(param_mag_num * param_R / 3.0, 2);
   sub_hall_sensor = nh.subscribe("/hall_sensor", 1000, hallSensorCB);

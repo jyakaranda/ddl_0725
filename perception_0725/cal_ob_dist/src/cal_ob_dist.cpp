@@ -10,6 +10,7 @@
 #include <opencv-3.3.1-dev/opencv2/imgproc/imgproc.hpp>
 #include <opencv-3.3.1-dev/opencv2/highgui/highgui.hpp>
 ////////
+// TODO bug
 #include "../../detector_xy/ZED/src/disparity_ref.cpp"
 ////////
 #include "python/Python.h"
@@ -55,29 +56,21 @@ bool cv2msg(sensor_msgs::Image &msg, const cv::Mat &img, const std::string &enco
   return true;
 }
 
-// void leftImgCB(const sensor_msgs::ImageConstPtr &msg)
-// {
-// }
-// void rightImgCB(const sensor_msgs::ImageConstPtr &msg)
-// {
-// }
-
-/////////////// 
+///////////////
 typedef struct sampledata
 {
-	int* classes;
-  
-	float* scores;
-  int** bboxes;
+  int *classes;
 
-}SLsampledata;
+  float *scores;
+  int **bboxes;
 
-typedef struct 
+} SLsampledata;
+
+typedef struct
 {
-   float* all_distance;
-   float* all_direction;
-} Result; 
-
+  float *all_distance;
+  float *all_direction;
+} Result;
 
 void callback(const sensor_msgs::ImageConstPtr &msg_left, const sensor_msgs::ImageConstPtr &msg_right)
 {
@@ -94,104 +87,97 @@ void callback(const sensor_msgs::ImageConstPtr &msg_left, const sensor_msgs::Ima
     cv::imshow(LEFT_WINDOW, mat_left);
     cv::imshow(RIGHT_WINDOW, mat_right);
     cv::waitKey(3);
-
-    Py_Initialize();    //初始化
-    if ( !Py_IsInitialized() ) {  
-        return -1;  
-    }  
-    string path = "~/SSD/notebooks";
-    string chdir_cmd = string("sys.path.append(../../detector_xy"") + path + "/")";
-
-    const char* cstr_cmd = chdir_cmd.c_str();
-    PyRun_SimpleString("import sys");
-    PyRun_SimpleString(cstr_cmd);
-    
-    //加载模块
-
-    PyObject* moduleName = PyString_FromString("test"); //模块名
-    PyObject* pModule = PyImport_Import(moduleName);
-   
-    if (!pModule) // 加载模块失败
-    {
-        cout << "[ERROR] Python get module failed." << endl;
-        return 0;
-    }
-    cout << "[INFO] Python get module succeed." << endl;
-
-    //加载函数
-    PyObject* pv = PyObject_GetAttrString(pModule, "process_image");
-    if (!pv || !PyCallable_Check(pv))  // 验证是否加载成功
-    {
-        cout << "[ERROR] Can't find funftion (test_add)" << endl;
-        return 0;
-    }
-    cout << "[INFO] Get function (test_add) succeed." << endl;
-    
-    //设置参数
-    PyObject* args = PyTuple_New(1);   // 1个参数
-    PyObject* arg1 = PyInt_FromLong(mat_left);    // 参数一
-   
-    PyTuple_SetItem(args, 0, arg1);
-
-    //调用函数
-     PyObject* pRet = PyObject_CallObject(pv, args);
-
-    // 获取参数
-    if (pRet)  // 验证是否调用成功
-    {
-        PyObject* result = PyArg_ParseTuple(pRet);
-       
-    }
-
-
-    int len1 =sizeof(result[0]) / sizeof(result[0][0]);//
-    int len2 =sizeof(result[1]) / sizeof(result[1][0]);//
-    int len3 =sizeof(result[2]) / sizeof(result[2][0]);//
-
-    
-    int* classes = new int[len1];
-    for(int i=0;i<len1;i++){
-       
-         classes[i]=result[0][i];
-
-    }
-
-    float* scores = new float[len2];
-    for(int i=0;i<len2;i++){
-       
-         scores[i]=result[1][i];
-
-    }
-
-    int** bboxes = new int[len3][4];
-    for(int i=0;i<len3;i++){
-               
-         bboxes[i][0] = result[2][i][0];//ymin
-         bboxes[i][1] = result[2][i][1];//xmin
-         bboxes[i][2] = result[2][i][2];//ymax
-         bboxes[i][3] = result[2][i][3];//xmax
-
-    }
-
-    SLsampledata data;
-
-    data.classes= classes;
-    data.scores= scores;
-    data.bboxes= bboxes;
-    
-    float* distance_all;
-		float* direction_all;
-    Result result_all;
-    result_all=camera_obj(mat_left, mat_right,bboxes);
-    //数组长为len3
-    distance_all=result_all.all_distance;//距离  距离返回值为10000的，实际检测有误 > 20
-    direction_all= result_all.all_direction;//角度 当距离返回值为10000时，角度设置为180，实际整组数据测距有误
-
-    Py_Finalize();      // 释放资源
-    
   }
-}
 
+  Py_Initialize(); //初始化
+  if (!Py_IsInitialized())
+  {
+    return -1;
+  }
+  // TODO bug
+  string path = "~/SSD/notebooks";
+  string chdir_cmd = string("sys.path.append(../../detector_xy"") + path + "/")";
+
+  const char* cstr_cmd = chdir_cmd.c_str();
+  PyRun_SimpleString("import sys");
+  PyRun_SimpleString(cstr_cmd);
+  
+  //加载模块
+
+  PyObject* moduleName = PyString_FromString("test"); //模块名
+  PyObject* pModule = PyImport_Import(moduleName);
+  
+  if (!pModule) // 加载模块失败
+  {
+    cout << "[ERROR] Python get module failed." << endl;
+    return 0;
+  }
+  cout << "[INFO] Python get module succeed." << endl;
+
+  //加载函数
+  PyObject* pv = PyObject_GetAttrString(pModule, "process_image");
+  if (!pv || !PyCallable_Check(pv))  // 验证是否加载成功
+  {
+    cout << "[ERROR] Can't find funftion (test_add)" << endl;
+    return 0;
+  }
+  cout << "[INFO] Get function (test_add) succeed." << endl;
+  
+  //设置参数
+  PyObject* args = PyTuple_New(1);   // 1个参数
+  PyObject* arg1 = PyInt_FromLong(mat_left);    // 参数一
+  
+  PyTuple_SetItem(args, 0, arg1);
+
+  //调用函数
+    PyObject* pRet = PyObject_CallObject(pv, args);
+
+  // 获取参数
+  if (pRet)  // 验证是否调用成功
+  {
+    PyObject *result = PyArg_ParseTuple(pRet);
+  }
+
+
+  int len1 =sizeof(result[0]) / sizeof(result[0][0]);//
+  int len2 =sizeof(result[1]) / sizeof(result[1][0]);//
+  int len3 =sizeof(result[2]) / sizeof(result[2][0]);//
+
+  
+  int* classes = new int[len1];
+  for(int i=0;i<len1;i++){
+    classes[i] = result[0][i];
+  }
+
+  float* scores = new float[len2];
+  for(int i=0;i<len2;i++){
+    scores[i] = result[1][i];
+  }
+
+  int** bboxes = new int[len3][4];
+  for(int i=0;i<len3;i++){
+    bboxes[i][0] = result[2][i][0]; //ymin
+    bboxes[i][1] = result[2][i][1]; //xmin
+    bboxes[i][2] = result[2][i][2]; //ymax
+    bboxes[i][3] = result[2][i][3]; //xmax
+  }
+
+  SLsampledata data;
+
+  data.classes= classes;
+  data.scores= scores;
+  data.bboxes= bboxes;
+  
+  float* distance_all;
+  float* direction_all;
+  Result result_all;
+  result_all=camera_obj(mat_left, mat_right,bboxes);
+  //数组长为len3
+  distance_all=result_all.all_distance;//距离  距离返回值为10000的，实际检测有误 > 20
+  direction_all= result_all.all_direction;//角度 当距离返回值为10000时，角度设置为180，实际整组数据测距有误
+
+  Py_Finalize();      // 释放资源
+}
 
 int main(int argc, char **argv)
 {

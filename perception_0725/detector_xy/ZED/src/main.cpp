@@ -36,43 +36,45 @@ cv::Mat slMat2cvMat(Mat& input);
 void calDisparity(const cv::Mat left, const cv::Mat  right, cv::Mat & disparity);
 void printHelp();
 
-int main(int argc, char **argv) {
+int camera_detect(const cv::Mat left, const cv::Mat  right,int** bboxes) {
 
     // Create a ZED camera object
-    Camera zed;
+    //Camera zed;
     // Set configuration parameters
-    InitParameters init_params;
+    //InitParameters init_params;
     // 分辨率
-    init_params.camera_resolution = RESOLUTION_HD1080;
+    //init_params.camera_resolution = RESOLUTION_HD1080;
     // 设置深度模式
-    init_params.depth_mode = DEPTH_MODE_PERFORMANCE;
+    //init_params.depth_mode = DEPTH_MODE_PERFORMANCE;
     // 使用coordinate_*条目（坐标系，坐标单位...）来协调框架配置参数
-    init_params.coordinate_units = UNIT_METER;
+   // init_params.coordinate_units = UNIT_METER;
     // 定义视差图
 	cv::Mat disparity;
 
 	//dispatity fliter
 
     // Open the camera
+    /*
     ERROR_CODE err = zed.open(init_params);
     if (err != SUCCESS) {
         printf("%s\n", toString(err).c_str());
         zed.close();
         return 1; // Quit if an error occurred
     }
-
+    */
     // Display help in console
     printHelp();
     // 设置运行参数
-    RuntimeParameters runtime_parameters;
-    runtime_parameters.sensing_mode = SENSING_MODE_STANDARD;
+    //RuntimeParameters runtime_parameters;
+    //runtime_parameters.sensing_mode = SENSING_MODE_STANDARD;
 
     // 准备新的图像尺寸以检索半分辨率图像
-    Resolution image_size = zed.getResolution();
+    //Resolution image_size = zed.getResolution();
+    
+   
 
-
-    int new_width = image_size.width / 2;
-    int new_height = image_size.height / 2;
+    int new_width = left.cols;
+    int new_height = left.rows;
 
     // To share data between sl::Mat and cv::Mat, use slMat2cvMat()
     // Only the headers and pointer to the sl::Mat are copied, not the data itself

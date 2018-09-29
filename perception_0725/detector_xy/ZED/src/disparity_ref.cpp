@@ -25,7 +25,7 @@ Mat slMat2cvMat(sl::Mat& input);
 //float computeDistance(Mat& filtered_disp,Mat& pointcloud,const Mat& Q,float& distance);
 
 //float computeDistance(Mat& filtered_disp,Mat& pointcloud,const Mat& Q,float& pointy,float& pointx,float& distance)
-float computeDistance(Mat& filtered_disp,Mat& pointcloud,const Mat& Q,int i,int j,float& distance);
+float computeDistance(Mat& filtered_disp,Mat& pointcloud,const Mat& Q,int i,int j,int** boxes_point,float& distance);
 
 Rect computeROI(Size2i src_sz, Ptr<StereoMatcher> matcher_instance);
 //distance paras
@@ -35,7 +35,7 @@ bool left_mouse = false;
 
 // ymin xmin ymax xmax
 
-float boxes_point[2][4]={{162,360,326,478},{138,140,280,300}};
+//int boxes_point[2][4]={{162,360,326,478},{138,140,280,300}};
 
 int len=sizeof(boxes_point)/sizeof(float);
 int len2=sizeof(boxes_point[0])/sizeof(float);
@@ -92,10 +92,14 @@ static void onMouse(int event, int x, int y, int /*flags*/, void* /*param*/){
 	}
 }
 
+typedef struct {
+    float* all_distance;
+    float* all_direction;
+} Result;   
+ 
 
 
-
-int main(int argc, char** argv)
+int camera_obj(const cv::Mat left, const cv::Mat  right,int** boxes_point)
 {
 	
 	//zed
@@ -107,6 +111,7 @@ int main(int argc, char** argv)
 	init_params.coordinate_units = sl::UNIT_METER;
 	//dispatity filter
 	cv::Ptr<DisparityWLSFilter> wls_filter;
+	/*
 	// Open the camera
 	sl::ERROR_CODE err = zed.open(init_params);
 	if (err != sl::SUCCESS) {
@@ -114,14 +119,16 @@ int main(int argc, char** argv)
 		zed.close();
 		return 1; // Quit if an error occurred
 	}
-
+    */
 	// Set runtime parameters after opening the camera
 	sl::RuntimeParameters runtime_parameters;
 	runtime_parameters.sensing_mode = sl::SENSING_MODE_STANDARD;
 	// Prepare new image size to retrieve half-resolution images
-	sl::Resolution image_size = zed.getResolution();
-	int new_width = image_size.width / 2;
-	int new_height = image_size.height / 2;
+	//sl::Resolution image_size = zed.getResolution();
+	//int new_width = image_size.width / 2;
+	//int new_height = image_size.height / 2;
+	int new_width = left.cols;
+    int new_height = left.rows;
 	// To share data between sl::Mat and cv::Mat, use slMat2cvMat()
 	// Only the headers and pointer to the sl::Mat are copied, not the data itself
 	sl::Mat image_zed_left(new_width, new_height, sl::MAT_TYPE_8U_C1);
@@ -300,11 +307,13 @@ int main(int argc, char** argv)
             int len3=len/len2;
 			//len3 一维 len2 二维
             
+            float* distance_all = new float[len3];
+			float* angle_all = new float[len3];
 			//////////////////////////////////////////
             for(int i=0;i<len3;i++)
 			{
-              computeDistance(filtered_disp_vis,pointcloud,Q,i,0,distance01);
-			  computeDistance(filtered_disp_vis,pointcloud,Q,i,2,distance02);
+              computeDistance(filtered_disp_vis,pointcloud,Q,i,0,boxes_point,distance01);
+			  computeDistance(filtered_disp_vis,pointcloud,Q,i,2,boxes_point,distance02);
 			  distance=(distance01 + distance02)/2;
 
 			  if (distance>20)
@@ -315,7 +324,9 @@ int main(int argc, char** argv)
                 std::string disstring("  : Null "); 
 				disString += str+disstring;
 				cv::putText(filtered_disp_vis, disString, cv::Point(5, 40+25*i), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(255, 0, 0));
-    
+                distance_all[i] = 10000;
+				angle_all[i] = 180;
+
 			  }  
 			  else
 			  {
@@ -323,7 +334,8 @@ int main(int argc, char** argv)
 				newX = (boxes_point[i][1]+boxes_point[i][3])/2;
 				float angle = atan((newX-centerX)/(distance+0.1))*180/3.1415;
                 ////////////////////////////////////////////////
-
+                distance_all[i] = distance;
+				angle_all[i] = angle;
 
                 std::string disString("Distance/Direction to object "); 
                 sprintf(str, "%d", i); 
@@ -333,7 +345,7 @@ int main(int argc, char** argv)
 			    disString += str+ disstring + disstr;               
 				cv::putText(filtered_disp_vis, disString, cv::Point(5, 40+25*i), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(255, 0, 0));
                 /////////////////////////////////////////////////////////////
-
+                
 
                
 			    }
@@ -383,6 +395,17 @@ int main(int argc, char** argv)
 			cv::imshow("filtered disparity", filtered_disp_vis);
 			int waittime = 10;
 			cv::waitKey(waittime);
+            /*
+			typedef struct {
+                   float* all_distance;
+                   float* all_direction;
+             } Result; 
+			
+			*/
+            Result result;
+            result.all_distance =distance_all;
+			result.all_direction =angle_all;
+			return result;
 			
 			
 		}
@@ -390,7 +413,7 @@ int main(int argc, char** argv)
 }
 
 // ############## 计算距离 #############
-float computeDistance(Mat& filtered_disp,Mat& pointcloud,const Mat& Q,int i,int j,float& distance)
+float computeDistance(Mat& filtered_disp,Mat& pointcloud,const Mat& Q,int i,int j,int** boxes_point,float& distance)
 {
 	if (filtered_disp.empty())
 	{

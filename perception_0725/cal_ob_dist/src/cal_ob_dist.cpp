@@ -10,6 +10,8 @@
 #include <opencv-3.3.1-dev/opencv2/imgproc/imgproc.hpp>
 #include <opencv-3.3.1-dev/opencv2/highgui/highgui.hpp>
 ////////
+#include "../../detector_xy/ZED/src/disparity_ref.cpp"
+////////
 #include "python/Python.h"
 ////////
 #define LEFT_WINDOW "viz_left"
@@ -70,7 +72,11 @@ typedef struct sampledata
 
 }SLsampledata;
 
-
+typedef struct 
+{
+   float* all_distance;
+   float* all_direction;
+} Result; 
 
 
 void callback(const sensor_msgs::ImageConstPtr &msg_left, const sensor_msgs::ImageConstPtr &msg_right)
@@ -173,12 +179,18 @@ void callback(const sensor_msgs::ImageConstPtr &msg_left, const sensor_msgs::Ima
     data.scores= scores;
     data.bboxes= bboxes;
     
+    float* distance_all;
+		float* direction_all;
+    Result result_all;
+    result_all=camera_obj(mat_left, mat_right,bboxes);
+    //数组长为len3
+    distance_all=result_all.all_distance;//距离  距离返回值为10000的，实际检测有误 > 20
+    direction_all= result_all.all_direction;//角度 当距离返回值为10000时，角度设置为180，实际整组数据测距有误
 
     Py_Finalize();      // 释放资源
     
   }
 }
-
 
 
 int main(int argc, char **argv)

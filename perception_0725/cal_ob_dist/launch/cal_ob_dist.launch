@@ -1,0 +1,8 @@
+<launch>
+  <include file="$(find zed_wrapper)/launch/zed.launch" />
+  <node pkg="cal_ob_dist" type="cal_ob_dist" name="cal_ob_dist_node">
+    <remap from="/zed/left/image" to="/zed/left/image_rect_color" />
+    <remap from="/zed/right/image" to="/zed/right/image_rect_color" />
+    <param name="viz" type="bool" value="true" />
+  </node>
+</launch>

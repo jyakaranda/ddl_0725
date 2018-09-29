@@ -39,7 +39,7 @@ bool NDTLocalization::init()
   tf::StampedTransform transform;
   try
   {
-    tf_listener_.waitForTransform(param_base_frame_, param_laser_frame_, ros::Time(0), ros::Duration(param_tf_timeout_), ros::Duration(param_tf_timeout_ / 3));
+    tf_listener_.waitForTransform(param_base_frame_, param_laser_frame_, ros::Time(0), ros::Duration(param_tf_timeout_ * 10), ros::Duration(param_tf_timeout_ / 3));
     tf_listener_.lookupTransform(param_base_frame_, param_laser_frame_, ros::Time(0), transform);
   }
   catch (const tf::TransformException &ex)

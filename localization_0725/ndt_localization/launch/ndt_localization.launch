@@ -1,0 +1,9 @@
+<launch>
+
+
+  <node pkg="tf" type="static_transform_publisher" name="base2laser" args="">
+
+  <node pkg="ndt_localization" type="ndt_localization_node" name="ndt_localization_node">
+    <rosparam file="$(find ndt_localization)/params/test.yaml" command="load" />
+  </node>
+</launch>

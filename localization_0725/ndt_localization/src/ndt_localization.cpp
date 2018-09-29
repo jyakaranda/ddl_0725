@@ -8,6 +8,10 @@
 
 #include "ndt_localization/ndt_localization.h"
 
+NDTLocalization::~NDTLocalization(){
+  
+}
+
 bool NDTLocalization::init()
 {
   ROS_INFO("Start init NDTLocalization");
@@ -214,6 +218,8 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg
   {
     use_predict_pose = true;
   }
+
+  // use_predict_pose = false;
 
   if (use_predict_pose)
   {

@@ -9,7 +9,9 @@
 
 #include <opencv-3.3.1-dev/opencv2/imgproc/imgproc.hpp>
 #include <opencv-3.3.1-dev/opencv2/highgui/highgui.hpp>
-
+////////
+#include "python/Python.h"
+////////
 #define LEFT_WINDOW "viz_left"
 #define RIGHT_WINDOW "viz_right"
 
@@ -58,6 +60,19 @@ bool cv2msg(sensor_msgs::Image &msg, const cv::Mat &img, const std::string &enco
 // {
 // }
 
+/////////////// 
+typedef struct sampledata
+{
+	int* classes;
+  
+	float* scores;
+  int* bboxes;
+
+}SLsampledata;
+
+
+
+
 void callback(const sensor_msgs::ImageConstPtr &msg_left, const sensor_msgs::ImageConstPtr &msg_right)
 {
   cv::Mat mat_left, mat_right;
@@ -66,15 +81,77 @@ void callback(const sensor_msgs::ImageConstPtr &msg_left, const sensor_msgs::Ima
     // error in translate
     return;
   }
-
+  /////////////////////////////////////////
   // TODO detect with mat_left and mag_right
   if (param_viz)
   {
     cv::imshow(LEFT_WINDOW, mat_left);
     cv::imshow(RIGHT_WINDOW, mat_right);
     cv::waitKey(3);
+
+    Py_Initialize();    //初始化
+    if ( !Py_IsInitialized() ) {  
+        return -1;  
+    }  
+    string path = "~/SSD/notebooks";
+    string chdir_cmd = string("sys.path.append(../../detector_xy"") + path + "/")";
+
+    const char* cstr_cmd = chdir_cmd.c_str();
+    PyRun_SimpleString("import sys");
+    PyRun_SimpleString(cstr_cmd);
+    
+    //加载模块
+
+    PyObject* moduleName = PyString_FromString("test"); //模块名
+    PyObject* pModule = PyImport_Import(moduleName);
+   
+    if (!pModule) // 加载模块失败
+    {
+        cout << "[ERROR] Python get module failed." << endl;
+        return 0;
+    }
+    cout << "[INFO] Python get module succeed." << endl;
+
+    //加载函数
+    PyObject* pv = PyObject_GetAttrString(pModule, "process_image");
+    if (!pv || !PyCallable_Check(pv))  // 验证是否加载成功
+    {
+        cout << "[ERROR] Can't find funftion (test_add)" << endl;
+        return 0;
+    }
+    cout << "[INFO] Get function (test_add) succeed." << endl;
+    
+    //设置参数
+    PyObject* args = PyTuple_New(1);   // 1个参数
+    PyObject* arg1 = PyInt_FromLong(mat_left);    // 参数一
+   
+    PyTuple_SetItem(args, 0, arg1);
+
+    //调用函数
+     PyObject* pRet = PyObject_CallObject(pv, args);
+
+    // 获取参数
+    if (pRet)  // 验证是否调用成功
+    {
+        PyObject* result = PyArg_ParseTuple(pRet);
+       
+    }
+
+
+    SLsampledata data;
+    data.classes= result[0];
+    data.scores= result[1];
+    data.bboxes= result[2];
+
+    Py_Finalize();      // 释放资源
+    
   }
 }
+
+
+
+
+
 
 int main(int argc, char **argv)
 {

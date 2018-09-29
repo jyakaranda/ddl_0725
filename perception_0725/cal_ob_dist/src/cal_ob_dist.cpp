@@ -66,7 +66,7 @@ typedef struct sampledata
 	int* classes;
   
 	float* scores;
-  int* bboxes;
+  int** bboxes;
 
 }SLsampledata;
 
@@ -138,18 +138,46 @@ void callback(const sensor_msgs::ImageConstPtr &msg_left, const sensor_msgs::Ima
     }
 
 
+    int len1 =sizeof(result[0]) / sizeof(result[0][0]);//
+    int len2 =sizeof(result[1]) / sizeof(result[1][0]);//
+    int len3 =sizeof(result[2]) / sizeof(result[2][0]);//
+
+    
+    int* classes = new int[len1];
+    for(int i=0;i<len1;i++){
+       
+         classes[i]=result[0][i];
+
+    }
+
+    float* scores = new float[len2];
+    for(int i=0;i<len2;i++){
+       
+         scores[i]=result[1][i];
+
+    }
+
+    int** bboxes = new int[len3][4];
+    for(int i=0;i<len3;i++){
+               
+         bboxes[i][0] = result[2][i][0];//ymin
+         bboxes[i][1] = result[2][i][1];//xmin
+         bboxes[i][2] = result[2][i][2];//ymax
+         bboxes[i][3] = result[2][i][3];//xmax
+
+    }
+
     SLsampledata data;
-    data.classes= result[0];
-    data.scores= result[1];
-    data.bboxes= result[2];
+
+    data.classes= classes;
+    data.scores= scores;
+    data.bboxes= bboxes;
+    
 
     Py_Finalize();      // 释放资源
     
   }
 }
-
-
-
 
 
 

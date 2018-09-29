@@ -2,6 +2,10 @@
 *.bag
 *.pcd
 
+# skip ide config
+*.idea
+*.vscode
+
 # cmake
 CMakeCache.txt
 CMakeFiles

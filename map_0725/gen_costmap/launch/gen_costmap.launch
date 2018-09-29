@@ -1,0 +1,4 @@
+<launch>
+    <node pkg="object_map" type="points2costmap" name="point2costmap">
+    </node>
+</launch>

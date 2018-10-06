@@ -1,0 +1,11 @@
+<launch>
+
+  <node pkg="dynamic_filter" type="dynamic_filter"  name="dynamic_filter" output="screen">
+    <param name="target_param" value="/home/fengkai/catkin_ws/input1.pcd"  />
+    <param name="input_param" value="/home/fengkai/catkin_ws/input2.pcd"  />
+    <param name="cloud_add_param" value="/home/fengkai/catkin_ws/output1.pcd"  />
+    <param name="cloud_static_param" value="/home/fengkai/catkin_ws/output2.pcd"  />
+
+  </node>
+  
+</launch>

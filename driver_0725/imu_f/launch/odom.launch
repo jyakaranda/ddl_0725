@@ -1,7 +1,7 @@
 <launch>
 
   <include file="$(find hall_sensor)/launch/hall_sensor.launch" />
-  <node pkg="imu_driver" type="imu_driver_node" name="imu_driver_node" />
+  <include file="$(find imu_driver)/launch/imu_driver.launch" />
   <include file="$(find imu_f)/launch/imu_ahrs.launch" />
 
 </launch>

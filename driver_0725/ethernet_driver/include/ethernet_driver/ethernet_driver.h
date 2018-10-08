@@ -19,6 +19,7 @@
 #include <geometry_msgs/TwistWithCovarianceStamped.h>
 #include <diagnostic_updater/diagnostic_updater.h>
 #include <diagnostic_updater/publisher.h>
+#include <ethernet_driver/user_protocol.h>
 
 #include <string>
 #include <sstream>
@@ -26,8 +27,6 @@
 #include <cmath>
 #include <vector>
 #include <map>
-
-#include "ethernet_driver/user_protocol.h"
 
 namespace ethernet_driver
 {

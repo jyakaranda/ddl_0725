@@ -92,7 +92,7 @@ void hallSensorCB(const std_msgs::Bool::ConstPtr &msg)
     msg_twist.twist.angular.x = cur_x;
     msg_twist.twist.angular.y = count;
     pub_circles.publish(msg_twist);
-    ROS_INFO("count: %d", count);
+    // ROS_INFO("count: %d", count);
     start = ros::Time::now();
     count = 0;
   }

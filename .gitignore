@@ -2,6 +2,8 @@
 *.bag
 *.pcd
 
+.vscode
+
 # cmake
 CMakeCache.txt
 CMakeFiles

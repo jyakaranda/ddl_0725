@@ -16,3 +16,9 @@ tf:
 - base_link -> laser : 0.17 0 0.185 0 0 0 0
 - base_link -> imu : 0.105 0.16 0.17 0 0 0 0
 - base_link -> rr : -0.178 -0.178 -0.165 0 0 0 0
+
+## 测试数据记录
+
+```shell
+rosbag record -O 1008_1200_all.bag /lslidar_point_cloud /hall_sensor /raw_imu /wheel_circles /imu/data /imu/odom /tf
+```

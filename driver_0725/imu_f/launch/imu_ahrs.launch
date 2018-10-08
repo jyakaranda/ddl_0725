@@ -2,8 +2,8 @@
 
   <node pkg="imu_f" type="imu_bridge" name="imu_bridge" respawn="false">
     <rosparam>
-   imu/gyroscope_bias: {x: -0.030036, y: -0.058412, z: 0.335443}
-   imu/accelerometer_bias: {x: -0.068342, y: 0.060088, z: -10.799879}
+      imu/gyroscope_bias: {x: -0.016816, y: -0.043712, z: 0.002788}
+      imu/accelerometer_bias: {x: 0.605000, y: -0.246953, z: -0.220859}
     </rosparam>
     <param name="imu/perform_calibration" value="false" />
     <param name="imu/use_mag_msg" value="true" />

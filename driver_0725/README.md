@@ -11,3 +11,9 @@
   - ~/hall_sensor(std_msgs/Bool)
 - pub: 
   - ~/wheel_circles(geometry_msgs/TwistStamped): filtered velocity in x, raw velocity in y.
+
+## imu_f
+
+- [x] 修改 odom 的 frame_id
+- [ ] 提高 odom 的更新频率
+- [x] 修改 odom -> base_link 的 tf

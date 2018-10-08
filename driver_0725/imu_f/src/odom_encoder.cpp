@@ -95,8 +95,8 @@ void OdomEncoder::callback(const sensor_msgs::Imu::ConstPtr &imu_msg, const geom
 
   nav_msgs::Odometry odom;
   odom.header.stamp = cur_time;
-  odom.header.frame_id = "odom";
-  odom.child_frame_id = "base_link";
+  odom.header.frame_id = "base_link";
+  // odom.child_frame_id = "base_link";
   odom.pose.pose.position.x = pos_x;
   odom.pose.pose.position.y = pos_y;
   odom.pose.pose.position.z = 0.0;

@@ -1,0 +1,17 @@
+<launch>
+
+  <include file="$(find common)/launch/static_tf.launch" />
+  <include file="$(find imu_f)/launch/odom.launch" />
+
+  <node pkg="pcl_ros" type="pcd_to_pointcloud" name="static_map_node" args="$(find static_map)/map_file/map.pcd">
+    <param name="frame_id" value="/map" />
+  </node>
+
+  <node pkg="ndt_localization" type="ndt_localization_node" name="ndt_localization_node" output="screen">
+    <rosparam file="$(find ndt_localization)/params/test.yaml" />
+    <remap from="/odom/imu" to="/imu/odom" />
+  </node>
+
+  <include file="$(find lslidar_c16_decoder)/launch/lslidar_c16.launch" />
+
+</launch>

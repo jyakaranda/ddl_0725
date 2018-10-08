@@ -41,8 +41,8 @@ void ImuVel::vel_callback(const sensor_msgs::ImuConstPtr &imu_msg)
     vel_msg->header.stamp = end;
     vel_msg->twist.angular.z = 0;
 
-    ROS_INFO("acc_Liner[x=%f,y=%f]", imu_msg->linear_acceleration.x, imu_msg->linear_acceleration.y);
-    ROS_INFO("Liner[x=%f,y=%f]", vel_msg->twist.linear.x, vel_msg->twist.linear.y);
+    // ROS_INFO("acc_Liner[x=%f,y=%f]", imu_msg->linear_acceleration.x, imu_msg->linear_acceleration.y);
+    // ROS_INFO("Liner[x=%f,y=%f]", vel_msg->twist.linear.x, vel_msg->twist.linear.y);
     pub.publish(vel_msg);
     begin = end;
 }

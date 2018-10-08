@@ -75,7 +75,7 @@ void OdomEncoder::callback(const sensor_msgs::Imu::ConstPtr &imu_msg, const geom
   //calculate robot's heading in quarternion angle
   //ROS has a function to calculate yaw in quaternion angle
   geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(imu_z_delta);
-  ROS_INFO("imu_z_delta=%f", imu_z_delta);
+  // ROS_INFO("imu_z_delta=%f", imu_z_delta);
 
   geometry_msgs::TransformStamped odom_trans;
   odom_trans.header.frame_id = "odom";

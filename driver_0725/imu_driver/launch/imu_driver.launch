@@ -1,0 +1,3 @@
+<launch>
+  <node pkg="imu_driver" type="imu_driver_node" name="imu_driver_node" />
+</launch>

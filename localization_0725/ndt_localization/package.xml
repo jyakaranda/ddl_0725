@@ -64,7 +64,8 @@
   <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>tf</exec_depend>
-
+  <build_depend>ndt_gpu</build_depend>
+  <exec_depend>ndt_gpu</exec_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

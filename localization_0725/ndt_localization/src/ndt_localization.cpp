@@ -33,6 +33,7 @@ bool NDTLocalization::init()
   pnh_.param<int>("ndt_max_iterations", param_ndt_max_iterations_, 25);
   pnh_.param<double>("ndt_step_size", param_ndt_step_size_, 0.1);
   pnh_.param<double>("ndt_epsilon", param_ndt_epsilon_, 0.01);
+  pnh_.param<bool>("use_cuda", param_use_cuda_, false);
 
   sub_initial_pose_ = nh_.subscribe<geometry_msgs::PoseWithCovarianceStamped>("/initialpose", 1, boost::bind(&NDTLocalization::initialPoseCB, this, _1));
   sub_map_ = nh_.subscribe<sensor_msgs::PointCloud2>("/map/point_cloud", 1, boost::bind(&NDTLocalization::mapCB, this, _1));
@@ -60,6 +61,16 @@ bool NDTLocalization::init()
   Eigen::AngleAxisf rot_y_btol(pitch, Eigen::Vector3f::UnitY());
   Eigen::AngleAxisf rot_z_btol(yaw, Eigen::Vector3f::UnitZ());
   tf_btol_ = (tl_btol * rot_z_btol * rot_y_btol * rot_x_btol).matrix();
+
+  if (param_use_cuda_)
+  {
+#ifdef CUDA_FOUND
+    anh_gpu_ndt_ptr =
+        std::make_shared<gpu::GNormalDistributionsTransform>();
+#else
+    ROS_ERROR("param use_cuda set true, but cuda not found!");
+#endif
+  }
 
   ROS_INFO("End init NDTLocalization");
   return true;
@@ -103,11 +114,35 @@ void NDTLocalization::mapCB(const sensor_msgs::PointCloud2::ConstPtr &msg)
 
   // set NDT target
   pthread_mutex_lock(&mutex);
-  ndt_.setResolution(param_ndt_resolution_);
-  ndt_.setInputTarget(map_ptr);
-  ndt_.setMaximumIterations(param_ndt_max_iterations_);
-  ndt_.setStepSize(param_ndt_step_size_);
-  ndt_.setTransformationEpsilon(param_ndt_epsilon_);
+  if (param_use_cuda_)
+  {
+#ifdef CUDA_FOUND
+    anh_gpu_ndt_ptr->setResolution(param_ndt_resolution_);
+    anh_gpu_ndt_ptr->setInputTarget(map_ptr);
+    anh_gpu_ndt_ptr->setMaximumIterations(param_ndt_max_iterations_);
+    anh_gpu_ndt_ptr->setStepSize(param_ndt_step_size_);
+    anh_gpu_ndt_ptr->setTransformationEpsilon(param_ndt_epsilon_);
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr dummy_scan_ptr(new pcl::PointCloud<pcl::PointXYZ>());
+    pcl::PointXYZ dummy_point;
+    dummy_scan_ptr->push_back(dummy_point);
+    anh_gpu_ndt_ptr->setInputSource(dummy_scan_ptr);
+
+    anh_gpu_ndt_ptr->align(Eigen::Matrix4f::Identity());
+
+#else
+    ROS_ERROR("param use_cuda set true, but cuda not found!");
+#endif
+  }
+  else
+  {
+    ndt_.setResolution(param_ndt_resolution_);
+    ndt_.setInputTarget(map_ptr);
+    ndt_.setMaximumIterations(param_ndt_max_iterations_);
+    ndt_.setStepSize(param_ndt_step_size_);
+    ndt_.setTransformationEpsilon(param_ndt_epsilon_);
+  }
+
   map_init_ = true;
   pthread_mutex_unlock(&mutex);
   ROS_INFO("Update model pc with %d points.", model_pc_num_);
@@ -187,21 +222,45 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg
   ros::Time align_start, align_end, getFitnessScore_start, getFitnessScore_end;
 
   pthread_mutex_lock(&mutex);
-  ndt_.setInputSource(scan_ptr);
+  if (param_use_cuda_)
+  {
+#ifdef CUDA_FOUND
+    anh_gpu_ndt_ptr->setInputSource(scan_ptr);
+    ROS_INFO("Start align");
+    align_start = ros::Time::now();
+    anh_gpu_ndt_ptr->align(init_guess);
+    align_end = ros::Time::now();
 
-  ROS_INFO("Start align");
-  align_start = ros::Time::now();
-  ndt_.align(*output_cloud, init_guess);
-  align_end = ros::Time::now();
+    final_tf = anh_gpu_ndt_ptr->getFinalTransformation();
+    has_converged_ = anh_gpu_ndt_ptr->hasConverged();
+    iteration_ = anh_gpu_ndt_ptr->getFinalNumIteration();
+    trans_probability_ = anh_gpu_ndt_ptr->getTransformationProbability();
 
-  final_tf = ndt_.getFinalTransformation();
-  has_converged_ = ndt_.hasConverged();
-  iteration_ = ndt_.getFinalNumIteration();
-  trans_probability_ = ndt_.getTransformationProbability();
+    getFitnessScore_start = ros::Time::now();
+    fitness_score_ = anh_gpu_ndt_ptr->getFitnessScore();
+    getFitnessScore_end = ros::Time::now();
+#else
+    ROS_ERROR("param use_cuda set true, but cuda not found!");
+#endif
+  }
+  else
+  {
+    ndt_.setInputSource(scan_ptr);
 
-  getFitnessScore_start = ros::Time::now();
-  fitness_score_ = ndt_.getFitnessScore();
-  getFitnessScore_end = ros::Time::now();
+    ROS_INFO("Start align");
+    align_start = ros::Time::now();
+    ndt_.align(*output_cloud, init_guess);
+    align_end = ros::Time::now();
+
+    final_tf = ndt_.getFinalTransformation();
+    has_converged_ = ndt_.hasConverged();
+    iteration_ = ndt_.getFinalNumIteration();
+    trans_probability_ = ndt_.getTransformationProbability();
+
+    getFitnessScore_start = ros::Time::now();
+    fitness_score_ = ndt_.getFitnessScore();
+    getFitnessScore_end = ros::Time::now();
+  }
 
   ROS_INFO("NDT has converged(time: %.2f): %d, iterations: %d, fitness_score(time: %.2f): %f, trans_probability: %f", (align_end - align_start).toSec(), has_converged_, iteration_, (getFitnessScore_end - getFitnessScore_start).toSec(), fitness_score_, trans_probability_);
 

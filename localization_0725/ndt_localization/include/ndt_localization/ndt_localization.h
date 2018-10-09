@@ -20,6 +20,8 @@
 #include <pthread.h>
 #include <chrono>
 
+#include <ndt_gpu/NormalDistributionsTransform.h>
+
 #include "user_protocol.h"
 
 typedef pcl::PointXYZ PointT;
@@ -79,6 +81,10 @@ private:
   int model_pc_num_;
   pthread_mutex_t mutex;
 
+  #ifdef CUDA_FOUND
+    static std::shared_ptr<gpu::GNormalDistributionsTransform> anh_gpu_ndt_ptr;
+  #endif
+
   pcl::NormalDistributionsTransform<PointT, PointT> ndt_;
   bool has_converged_;
   double fitness_score_;
@@ -99,6 +105,7 @@ private:
   int param_ndt_max_iterations_;
   double param_ndt_step_size_;
   double param_ndt_epsilon_;
+  bool param_use_cuda_;
 
   /**
    * @brief Save motion data to get a rough pose estimation to give NDT-matching a initial transformation matrix.

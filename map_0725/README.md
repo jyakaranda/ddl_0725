@@ -17,3 +17,46 @@
 - 对两帧点云计算 `transform` ，将点云中移动距离与 `transform` 相差较大的点进行剔除
 - 在点云中提取 `bounding box` ，基于 `bounding box` 进行配准
 - 看下相关论文
+
+
+pointcloud_to_pcd
+
+Subscribes to a ROS topic and saves point cloud messages to PCD files. Each message is saved to a separate file, names are composed of an optional prefix parameter, the ROS time of the message, and the .pcd extension.
+
+Subscribed Topics
+<br>
+input (sensor_msgs/PointCloud2) 
+</br>A stream of point clouds to save as PCD files.
+
+Parameters
+</br>
+~prefix (str)
+</br>
+Prefix for PCD file names created.
+</br>
+~fixed_frame (str)
+</br>
+If set, the transform from the fixed frame to the frame of the point cloud is written to the VIEWPOINT entry of the pcd file.
+</br>
+~binary (bool, default: false)
+</br>
+Output the pcd file in binary form.
+</br>
+~compressed (bool, default: false)
+In case that binary output format is set, use binary compressed output.
+
+pcd_to_pointcloud
+
+Loads a PCD file, publishing it one or more times as a ROS point cloud message.
+
+Published Topics
+</br>
+cloud_pcd (sensor_msgs/PointCloud2)
+</br>
+A stream of point clouds generated from the PCD file.
+
+Parameters
+</br>
+~frame_id (str, default: /base_link)
+</br>
+Transform frame ID for published data.

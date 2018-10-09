@@ -14,8 +14,13 @@ int main(int argc, char **argv)
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filterd(new pcl::PointCloud<pcl::PointXYZ>);
 
+  std::string param_pcd_file;
+  std::string param_frame_id;
+  ros::NodeHandle pnh("~");
+  pnh.param<std::string>("pcd_file", param_pcd_file, "");
+  pnh.param<std::string>("frame_id", param_frame_id, "/map");
   pcl::PCDReader reader;
-  reader.read<pcl::PointXYZ>("/home/lenovo/zh/workspace/catkin_ws/src/bag_file/pcd/get_2d_map/map_0803_1000_03.pcd", *cloud);
+  reader.read<pcl::PointXYZ>(param_pcd_file, *cloud);
 
   std::cerr << "Cloud before filtering" << std::endl;
   std::cerr << *cloud << std::endl;
@@ -34,12 +39,12 @@ int main(int argc, char **argv)
 
   sensor_msgs::PointCloud2 msg_pc;
   pcl::toROSMsg(*cloud_filterd, msg_pc);
-  msg_pc.header.frame_id = "/base_link";
-  msg_pc.header.stamp = ros::Time::now();
+  msg_pc.header.frame_id = param_frame_id;
   std::cout << "points: " << msg_pc.data.size() << std::endl;
   ros::Duration rate(1);
   while (ros::ok())
   {
+    msg_pc.header.stamp = ros::Time::now();
     pub_pc.publish(msg_pc);
     rate.sleep();
     ros::spinOnce();

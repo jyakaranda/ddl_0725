@@ -82,7 +82,7 @@ private:
   pthread_mutex_t mutex;
 
   #ifdef CUDA_FOUND
-    static std::shared_ptr<gpu::GNormalDistributionsTransform> anh_gpu_ndt_ptr;
+  std::shared_ptr<gpu::GNormalDistributionsTransform> anh_gpu_ndt_ptr;
   #endif
 
   pcl::NormalDistributionsTransform<PointT, PointT> ndt_;

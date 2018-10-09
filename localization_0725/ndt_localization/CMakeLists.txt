@@ -27,7 +27,7 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_msgs
   tf
-  ${PCL_OPENMP_PACKAGES}
+  # ${PCL_OPENMP_PACKAGES}
 )
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -149,7 +149,7 @@ target_link_libraries(ndt_localization
   ${cakint_LIBRARIES}
   ${PCL_LIBRARIES}
   ${CUDA_LIBRARIES}
-  ndt_gpu
+ ndt_gpu
 )
 
 if (CUDA_FOUND)

@@ -65,6 +65,7 @@ bool NDTLocalization::init()
   if (param_use_cuda_)
   {
 #ifdef CUDA_FOUND
+    ROS_INFO("init gpu ndt.");
     anh_gpu_ndt_ptr =
         std::make_shared<gpu::GNormalDistributionsTransform>();
 #else
@@ -136,11 +137,13 @@ void NDTLocalization::mapCB(const sensor_msgs::PointCloud2::ConstPtr &msg)
   }
   else
   {
+    PointCloudT::Ptr output_cloud(new PointCloudT());
     ndt_.setResolution(param_ndt_resolution_);
     ndt_.setInputTarget(map_ptr);
     ndt_.setMaximumIterations(param_ndt_max_iterations_);
     ndt_.setStepSize(param_ndt_step_size_);
     ndt_.setTransformationEpsilon(param_ndt_epsilon_);
+    ndt_.align(*output_cloud, Eigen::Matrix4f::Identity());
   }
 
   map_init_ = true;

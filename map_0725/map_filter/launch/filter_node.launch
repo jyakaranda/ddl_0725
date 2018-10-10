@@ -1,5 +1,5 @@
 <launch>
-  <node pkg="map_filter" type="filter_node" name="filter_node">
+  <!-- <node pkg="map_filter" type="filter_node" name="filter_node">
     <param name="pcd_file" value="$(find static_map)/map_file/0.pcd" />
-  </node>
+  </node> -->
 </launch>

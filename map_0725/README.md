@@ -60,3 +60,7 @@ Parameters
 ~frame_id (str, default: /base_link)
 </br>
 Transform frame ID for published data.
+
+### rt_filter_node
+
+对点云进行过滤，只保留一定范围内的点云数据

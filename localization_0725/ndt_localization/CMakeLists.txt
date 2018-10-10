@@ -138,7 +138,6 @@ include_directories(
   ${PCL_INCLUDE_DIRS}
   ${CUDA_INCLUDE_DIRS}
   ../../common_0725/user_protocol/include
-  /home/lenovo/zh/source/Autoware/ros/src/computing/perception/localization/lib/ndt_gpu/include
 )
 
 add_library(ndt_localization
@@ -149,7 +148,7 @@ target_link_libraries(ndt_localization
   ${cakint_LIBRARIES}
   ${PCL_LIBRARIES}
   ${CUDA_LIBRARIES}
- ndt_gpu
+  ndt_gpu
 )
 
 if (CUDA_FOUND)

@@ -88,8 +88,8 @@ OdomEncoder::OdomEncoder(ros::NodeHandle nh, ros::NodeHandle pnh) : nh_(nh), pnh
 
     nav_msgs::Odometry odom;
     odom.header.stamp = current_time;
-    odom.header.frame_id = "odom";
-    odom.child_frame_id = "base_link";
+    odom.header.frame_id = "base_link";
+    //odom.child_frame_id = "base_link";
     //robot's position in x,y, and z
     odom.pose.pose.position.x = pos_x;
     odom.pose.pose.position.y = pos_y;

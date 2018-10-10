@@ -7,7 +7,7 @@ ImuBridge::ImuBridge(ros::NodeHandle nh, ros::NodeHandle pnh):
   use_accelerometer_(true),
   use_gyroscope_(true),
   use_magnetometer_(true),
-  use_mag_msg_(true),
+  use_mag_msg_(false),
   perform_calibration_(true),
   is_calibrated_(false)
 {
@@ -39,13 +39,13 @@ ImuBridge::ImuBridge(ros::NodeHandle nh, ros::NodeHandle pnh):
 
     pnh_.param<int>("imu/calibration_samples", calibration_samples_, 500);
 
+    imu_pub_ = nh_.advertise<sensor_msgs::Imu>("imu/imu_raw", 5);
+
     pnh_.param<double>("imu/linear_acc_stdev", linear_acc_stdev_, 0.0);
     ImuBridge::fillRowMajor(linear_acc_covar_, linear_acc_stdev_);
 
     pnh_.param<double>("imu/angular_vel_stdev", angular_vel_stdev_, 0.0);
     ImuBridge::fillRowMajor(angular_vel_covar_, angular_vel_stdev_);
-    
-    imu_pub_ = nh_.advertise<sensor_msgs::Imu>("imu/data_raw", 5);
   }
 
   if (use_magnetometer_)

@@ -2,7 +2,7 @@
 *.bag
 *.pcd
 
-.vscode
+*.vscode
 
 # cmake
 CMakeCache.txt

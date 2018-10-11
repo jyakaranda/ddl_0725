@@ -12,4 +12,4 @@ ndt_resolution: 2.0
 ndt_max_iterations: 5
 ndt_step_size: 0.2
 ndt_epsilon: 1.0
-use_cuda: false
+method_type: 2

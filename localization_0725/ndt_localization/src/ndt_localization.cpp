@@ -183,14 +183,14 @@ void NDTLocalization::odomCB(const nav_msgs::Odometry::ConstPtr &msg)
   }
 
   msg_odom_ = msg;
-  offset_odom_.roll += msg->twist.twist.angular.x * diff_time;
-  offset_odom_.pitch += msg->twist.twist.angular.y * diff_time;
+  // offset_odom_.roll += msg->twist.twist.angular.x * diff_time;
+  // offset_odom_.pitch += msg->twist.twist.angular.y * diff_time;
   offset_odom_.yaw += msg->twist.twist.angular.z * diff_time;
   double diff_x = msg->twist.twist.linear.x * diff_time;
   offset_odom_.x += std::cos(-current_pose_.pitch) * std::cos(current_pose_.yaw) * diff_x;
   offset_odom_.y += std::cos(-current_pose_.pitch) * std::sin(current_pose_.yaw) * diff_x;
   offset_odom_.z += std::sin(-current_pose_.pitch) * diff_x;
-  current_pose_odom_ = pre_pose_odom_ + offset_odom_;
+  current_pose_odom_ += offset_odom_;
   predict_pose_odom_ = pre_pose_ + offset_odom_;
   pre_pose_odom_ = current_pose_odom_;
   // ROS_INFO("offset_odom.y: %.2f, %f", offset_odom_.y, ros::Time::now().toSec());
@@ -227,7 +227,7 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg
   // TODO predict_ndt_pose
   if (param_use_odom_)
   {
-    predict_ndt_pose = pre_pose_odom_;
+    predict_ndt_pose = predict_pose_odom_;
   }
 
   Eigen::Translation3f init_translation(predict_ndt_pose.x, predict_ndt_pose.y, predict_ndt_pose.z);
@@ -364,4 +364,9 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg
   tmp_q.setRPY(current_pose_.roll, current_pose_.pitch, current_pose_.yaw);
   tf::Transform transform2(tmp_q, tf::Vector3(current_pose_.x, current_pose_.y, current_pose_.z));
   tf_broadcaster_.sendTransform(tf::StampedTransform(transform2 * transform1.inverse(), msg->header.stamp, param_map_frame_, param_odom_frame_));
+
+  offset_odom_.reset();
+  current_pose_odom_ = current_pose_;
+  pre_pose_odom_ = current_pose_;
+  pre_pose_ = current_pose_;
 }

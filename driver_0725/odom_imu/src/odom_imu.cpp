@@ -77,8 +77,8 @@ void OdomImu::imuCB(const sensor_msgs::Imu::ConstPtr &msg)
   double offset_pitch = angle_vel_y * diff_time;
   double offset_yaw = angle_vel_z * diff_time;
 
-  current_pose_.roll += angle_vel_x * diff_time;
-  current_pose_.pitch += angle_vel_y * diff_time;
+  // current_pose_.roll += angle_vel_x * diff_time;
+  // current_pose_.pitch += angle_vel_y * diff_time;
   current_pose_.yaw += angle_vel_z * diff_time;
   // current_pose_.roll = 0.;
   // current_pose_.pitch = 0.;
@@ -99,7 +99,7 @@ void OdomImu::imuCB(const sensor_msgs::Imu::ConstPtr &msg)
   // current_pose_.y += current_vel_y_ * diff_time + accY * diff_time * diff_time / 2.0;
   // current_pose_.z += current_vel_z_ * diff_time + accZ * diff_time * diff_time / 2.0;
   current_pose_.x += cur_vel_.twist.linear.x * std::cos(current_pose_.yaw) * diff_time;
-  current_pose_.y += cur_vel_.twist.linear.y * std::sin(current_pose_.yaw) * diff_time;
+  current_pose_.y += cur_vel_.twist.linear.x * std::sin(current_pose_.yaw) * diff_time;
   current_pose_.z = 0.;
 
   current_vel_x_ += accX * diff_time;
@@ -123,7 +123,10 @@ void OdomImu::imuCB(const sensor_msgs::Imu::ConstPtr &msg)
     }
   }
 
-  tf::Transform transform2(tf::Quaternion(current_pose_.yaw, current_pose_.pitch, current_pose_.roll), tf::Vector3(current_pose_.x, current_pose_.y, current_pose_.z));
+  tf::Quaternion tmp_q;
+  tmp_q.setRPY(0., 0., current_pose_.yaw);
+
+  tf::Transform transform2(tmp_q, tf::Vector3(current_pose_.x, current_pose_.y, current_pose_.z));
   // transform odom->imu to odom->base
   tf::Transform transform = transform2 * tf_btoi_.inverse();
   tf_broadcaster_.sendTransform(tf::StampedTransform(transform, msg->header.stamp, param_odom_frame_, param_base_frame_));
@@ -133,5 +136,11 @@ void OdomImu::imuCB(const sensor_msgs::Imu::ConstPtr &msg)
   msg_odom_.child_frame_id = param_base_frame_;
   tf::pointTFToMsg(transform.getOrigin(), msg_odom_.pose.pose.position);
   tf::quaternionTFToMsg(transform.getRotation(), msg_odom_.pose.pose.orientation);
+  msg_odom_.twist.twist.angular.x = angle_vel_x;
+  msg_odom_.twist.twist.angular.y = angle_vel_y;
+  msg_odom_.twist.twist.angular.z = angle_vel_z;
+  msg_odom_.twist.twist.linear.x = cur_vel_.twist.linear.x;
+  msg_odom_.twist.twist.linear.y = cur_vel_.twist.linear.y;
+  msg_odom_.twist.twist.linear.z = cur_vel_.twist.linear.z;
   pub_odom_.publish(msg_odom_);
 }

@@ -243,7 +243,7 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg
   {
 #ifdef CUDA_FOUND
     anh_gpu_ndt_ptr->setInputSource(scan_ptr);
-    ROS_INFO("Start align");
+    ROS_INFO("Start align cuda");
     align_start = ros::Time::now();
     anh_gpu_ndt_ptr->align(init_guess);
     align_end = ros::Time::now();
@@ -263,7 +263,7 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg
   else if (param_method_type_ == METHOD_OMP)
   {
 #ifdef USE_OMP
-    ROS_INFO("Start align");
+    ROS_INFO("Start align omp");
     omp_ndt_.setInputSource(scan_ptr);
 
     align_start = ros::Time::now();
@@ -286,7 +286,7 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg
   {
     ndt_.setInputSource(scan_ptr);
 
-    ROS_INFO("Start align");
+    ROS_INFO("Start align pcl");
     align_start = ros::Time::now();
     ndt_.align(*output_cloud, init_guess);
     align_end = ros::Time::now();

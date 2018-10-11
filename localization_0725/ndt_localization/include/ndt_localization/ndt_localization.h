@@ -21,8 +21,16 @@
 #include <chrono>
 
 #include <ndt_gpu/NormalDistributionsTransform.h>
+#include <pcl_omp_registration/ndt.h>
+#ifndef USE_OMP
+#define USE_OMP
+#endif
 
 #include "user_protocol.h"
+
+#define METHOD_PCL 0
+#define METHOD_CUDA 1
+#define METHOD_OMP 2
 
 typedef pcl::PointXYZ PointT;
 typedef pcl::PointCloud<PointT> PointCloudT;
@@ -84,6 +92,9 @@ private:
   #ifdef CUDA_FOUND
   std::shared_ptr<gpu::GNormalDistributionsTransform> anh_gpu_ndt_ptr;
   #endif
+  #ifdef USE_OMP
+  pcl_omp::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ> omp_ndt_;
+  #endif
 
   pcl::NormalDistributionsTransform<PointT, PointT> ndt_;
   bool has_converged_;
@@ -105,7 +116,7 @@ private:
   int param_ndt_max_iterations_;
   double param_ndt_step_size_;
   double param_ndt_epsilon_;
-  bool param_use_cuda_;
+  int param_method_type_;
 
   /**
    * @brief Save motion data to get a rough pose estimation to give NDT-matching a initial transformation matrix.

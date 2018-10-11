@@ -33,7 +33,7 @@ bool NDTLocalization::init()
   pnh_.param<int>("ndt_max_iterations", param_ndt_max_iterations_, 25);
   pnh_.param<double>("ndt_step_size", param_ndt_step_size_, 0.1);
   pnh_.param<double>("ndt_epsilon", param_ndt_epsilon_, 0.01);
-  pnh_.param<bool>("use_cuda", param_use_cuda_, false);
+  pnh_.param<int>("method_type", param_method_type_, 0);
 
   sub_initial_pose_ = nh_.subscribe<geometry_msgs::PoseWithCovarianceStamped>("/initialpose", 1, boost::bind(&NDTLocalization::initialPoseCB, this, _1));
   sub_map_ = nh_.subscribe<sensor_msgs::PointCloud2>("/map/point_cloud", 1, boost::bind(&NDTLocalization::mapCB, this, _1));
@@ -62,14 +62,14 @@ bool NDTLocalization::init()
   Eigen::AngleAxisf rot_z_btol(yaw, Eigen::Vector3f::UnitZ());
   tf_btol_ = (tl_btol * rot_z_btol * rot_y_btol * rot_x_btol).matrix();
 
-  if (param_use_cuda_)
+  if (param_method_type_ == METHOD_CUDA)
   {
 #ifdef CUDA_FOUND
     ROS_INFO("init gpu ndt.");
     anh_gpu_ndt_ptr =
         std::make_shared<gpu::GNormalDistributionsTransform>();
 #else
-    ROS_ERROR("param use_cuda set true, but cuda not found!");
+    ROS_ERROR("param method_type set to cuda, but cuda_found not defined!");
 #endif
   }
 
@@ -115,7 +115,7 @@ void NDTLocalization::mapCB(const sensor_msgs::PointCloud2::ConstPtr &msg)
 
   // set NDT target
   pthread_mutex_lock(&mutex);
-  if (param_use_cuda_)
+  if (param_method_type_ == METHOD_CUDA)
   {
 #ifdef CUDA_FOUND
     anh_gpu_ndt_ptr->setResolution(param_ndt_resolution_);
@@ -132,7 +132,21 @@ void NDTLocalization::mapCB(const sensor_msgs::PointCloud2::ConstPtr &msg)
     anh_gpu_ndt_ptr->align(Eigen::Matrix4f::Identity());
 
 #else
-    ROS_ERROR("param use_cuda set true, but cuda not found!");
+    ROS_ERROR("param method_type set to cuda, but cuda_found not defined!");
+#endif
+  }
+  else if (param_method_type_ == METHOD_OMP)
+  {
+#ifdef USE_OMP
+    PointCloudT::Ptr output_cloud(new PointCloudT());
+    omp_ndt_.setResolution(param_ndt_resolution_);
+    omp_ndt_.setInputTarget(map_ptr);
+    omp_ndt_.setMaximumIterations(param_ndt_max_iterations_);
+    omp_ndt_.setStepSize(param_ndt_step_size_);
+    omp_ndt_.setTransformationEpsilon(param_ndt_epsilon_);
+    omp_ndt_.align(*output_cloud, Eigen::Matrix4f::Identity());
+#else
+    ROS_ERROR("param method_type set to omp, but use_omp not defined!");
 #endif
   }
   else
@@ -225,7 +239,7 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg
   ros::Time align_start, align_end, getFitnessScore_start, getFitnessScore_end;
 
   pthread_mutex_lock(&mutex);
-  if (param_use_cuda_)
+  if (param_method_type_ == METHOD_CUDA)
   {
 #ifdef CUDA_FOUND
     anh_gpu_ndt_ptr->setInputSource(scan_ptr);
@@ -243,7 +257,29 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg
     fitness_score_ = anh_gpu_ndt_ptr->getFitnessScore();
     getFitnessScore_end = ros::Time::now();
 #else
-    ROS_ERROR("param use_cuda set true, but cuda not found!");
+    ROS_ERROR("param method_type set true, but cuda not found!");
+#endif
+  }
+  else if (param_method_type_ == METHOD_OMP)
+  {
+#ifdef USE_OMP
+    ROS_INFO("Start align");
+    omp_ndt_.setInputSource(scan_ptr);
+
+    align_start = ros::Time::now();
+    omp_ndt_.align(*output_cloud, init_guess);
+    align_end = ros::Time::now();
+
+    final_tf = omp_ndt_.getFinalTransformation();
+    has_converged_ = omp_ndt_.hasConverged();
+    iteration_ = omp_ndt_.getFinalNumIteration();
+    trans_probability_ = omp_ndt_.getTransformationProbability();
+
+    getFitnessScore_start = ros::Time::now();
+    fitness_score_ = omp_ndt_.getFitnessScore();
+    getFitnessScore_end = ros::Time::now();
+#else
+    ROS_ERROR("param method_type set to omp, but use_omp not defined!");
 #endif
   }
   else

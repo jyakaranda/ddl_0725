@@ -8,8 +8,8 @@ odom_timeout: 1.5 # waiting for next odom msg, too long means large uncertainty
 use_odom: true
 predict_error_thresh: 0.5
 
-ndt_resolution: 2.0
-ndt_max_iterations: 5
+ndt_resolution: 1.0
+ndt_max_iterations: 25
 ndt_step_size: 0.2
-ndt_epsilon: 1.0
-use_cuda: false
+ndt_epsilon: 0.1
+method_type: 2

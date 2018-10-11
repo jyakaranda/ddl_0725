@@ -82,7 +82,7 @@ void GlobalPlanCB(const nav_msgs::Path& msg){
     if(new_goal){
         *global_plan = msg.poses;
         new_global_plan = true;
-        new_goal = false;
+        //new_goal = false;
         trajectory = true;
     }
     
@@ -104,7 +104,8 @@ void LocalPlanCB(const ros::TimerEvent& e){
             if(teb_local.isGoalReached()){
                 ROS_DEBUG_NAMED("move_base","Goal reached!");
                 goal_reached = true;
-                trajectory = false;
+                //trajectory = false;
+                resetState();
             }
             if(teb_local.computeVelocityCommands(cmd_vel)){//compute中实现了可视化，publish planner,global_planner_
                 ROS_DEBUG_NAMED( "move_base", "Got a valid command from the local planner: %.3lf, %.3lf, %.3lf",

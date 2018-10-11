@@ -193,8 +193,8 @@ void NDTLocalization::odomCB(const nav_msgs::Odometry::ConstPtr &msg)
   current_pose_odom_ = pre_pose_odom_ + offset_odom_;
   predict_pose_odom_ = pre_pose_ + offset_odom_;
   pre_pose_odom_ = current_pose_odom_;
-  ROS_INFO("offset_odom.y: %.2f, %f", offset_odom_.y, ros::Time::now().toSec());
-  ROS_INFO("Current odom pose: (%.2f, %.2f, %.2f; %.2f, %.2f, %.2f)", current_pose_odom_.x, current_pose_odom_.y, current_pose_odom_.z, current_pose_odom_.roll, current_pose_odom_.pitch, current_pose_odom_.yaw);
+  // ROS_INFO("offset_odom.y: %.2f, %f", offset_odom_.y, ros::Time::now().toSec());
+  // ROS_INFO("Current odom pose: (%.2f, %.2f, %.2f; %.2f, %.2f, %.2f)", current_pose_odom_.x, current_pose_odom_.y, current_pose_odom_.z, current_pose_odom_.roll, current_pose_odom_.pitch, current_pose_odom_.yaw);
   pre_odom_time_ = msg->header.stamp;
 }
 

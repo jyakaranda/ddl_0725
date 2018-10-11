@@ -3,7 +3,7 @@
   <include file="$(find ros_arduino_imu)/launch/xrobot_imu.launch" /> -->
   
   <node pkg="odom_imu" type="odom_imu_node" name="odom_imu_node" output="screen">
-    <param name="max_interval" type="double" value="1.0" />
+    <param name="max_interval" type="double" value="2.0" />
     <param name="angle_vel_sensitive" type="double" value="0.1" />
     <param name="linear_vel_sensitive" type="double" value="0.1" />
     <param name="base_frame" type="string" value="/base_link" />

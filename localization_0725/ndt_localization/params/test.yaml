@@ -6,7 +6,7 @@ laser_frame: "/laser"
 tf_timeout: 1.0 # waiting for available tf
 odom_timeout: 1.5 # waiting for next odom msg, too long means large uncertainty
 use_odom: true
-predict_error_thresh: 0.5
+predict_error_thresh: 5
 
 ndt_resolution: 1.0
 ndt_max_iterations: 25

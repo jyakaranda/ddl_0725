@@ -331,7 +331,7 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg
 
   // use_predict_pose = false;
 
-  if (use_predict_pose)
+  if (!use_predict_pose)
   {
     current_pose_ = ndt_pose;
     ROS_INFO("Use ndt predict pose: (%.2f, %.2f, %.2f; %.2f, %.2f, %.2f)", current_pose_.x, current_pose_.y, current_pose_.z, current_pose_.roll, current_pose_.pitch, current_pose_.yaw);

@@ -1,0 +1,7 @@
+<launch>
+    <node pkg="pcl_ros" type="pcd_to_pointcloud" name="pcd2pc" args="$(find static_map)/map_file/map_1008_1.pcd">
+        <remap from="/cloud_pcd" to="/points_raw" />
+        <param name="frame_id" value="/map" />
+    </node>
+    <include file="$(find lidar_euclidean_cluster_detect)/launch/lidar_euclidean_cluster_detect.launch" />
+</launch>

@@ -809,7 +809,7 @@ class LineTrajectory(object):
         data = {}
         data["points"] = []
         for p in self.points:
-            data["points"].append({"x": p[0], "y": p[1], "theta": p[2]})
+            data["points"].append({"x": p[0], "y": p[1], "theta": 0})
         with open(path, 'w') as outfile:
             json.dump(data, outfile)
 
@@ -866,20 +866,21 @@ class LineTrajectory(object):
             self.points.append((p.pose.position.x, p.pose.position.y))
             if p.pose.position.z > 0:
                 self.speed_profile.append(p.pose.position.z)
-            self.update_distances()
-            self.mark_dirty()
-            print "Loaded new trajectory with:", len(path.poses),"points."
+        self.update_distances()
+        self.mark_dirty()
+        print "Loaded new trajectory with:", len(path.poses),"points."
 
 
     def toPath(self):
         path = navPath()
         path.header = make_header("/map")
+        q = angle_to_quaternion(np.arctan((self.points[-1][1]-self.points[0][1])/(self.points[-1][0]-self.points[0][0])))
         for p in self.points:
             pose = PoseStamped()
             pose.pose.position.x = p[0]
             pose.pose.position.y = p[1]
             pose.pose.position.z = 0
-            pose.pose.orientation = angle_to_quaternion(p[2])
+            pose.pose.orientation = q
             path.poses.append(pose)
         return path
 
@@ -1019,24 +1020,25 @@ class LineTrajectory(object):
         self.publish_trajectory(duration=duration)
         self.publish_end_point(duration=duration)
         self.publish_speeds(duration=duration)
+        self.publish_path(duration=duration)
 
     def publish_path(self, duration=0):
         if not self.visualize:
             print "Cannot visualize path, not initialized with visualization enabled"
             return
-        if pub_path.get_num_connections() > 0:
+        if self.pub_path.get_num_connections() > 0:
             path = navPath()
-            path.header = make_header("/base_link")
+            path.header = make_header("/map")
             for p in self.points:
                 pose = PoseStamped()
                 pose.pose.position.x = p[0]
                 pose.pose.position.y = p[1]
                 pose.pose.position.z = 0
-                pose.pose.orientation = angle_to_quaternion(p[2])
+                pose.pose.orientation = angle_to_quaternion(0)
 
                 path.poses.append(pose)
             self.pub_path.publish(path)
-        elif pub_path.get_num_connections() == 0:
+        elif self.pub_path.get_num_connections() == 0:
             print "Not publishing recorded path, no subscriber."
 
 

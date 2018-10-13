@@ -50,7 +50,7 @@ int main(int argc, char** argv)
     
     vel_pub_ = n.advertise<geometry_msgs::Twist>("cmd_vel",1);
     ros::Subscriber real_goal = n.subscribe("/move_base_simple/goal", 1, GoalCB);
-    ros::Subscriber gl_planer = n.subscribe("global_plan",1,GlobalPlanCB);
+    ros::Subscriber gl_planer = n.subscribe("/found_trajectory/path",1,GlobalPlanCB);
     
     //ros::Subscriber local_grid = n.subscribe("local_costmap",1,LocalCostMapCB);
     //ros::Subscriber timed_costmap_ = n.subscribe("timed_costmap",1,costmapCB);

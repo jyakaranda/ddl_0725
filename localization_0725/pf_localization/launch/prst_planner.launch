@@ -1,0 +1,104 @@
+<launch>
+
+    <param name="use_sim_time" value="false" />
+
+    <!-- launch lidar -->
+    <include file="$(find lslidar_c16_decoder)/launch/lslidar_c16.launch" />
+
+    <!-- launch ethernet_driver -->
+    <include file="$(find ethernet_test)/launch/ethernet.launch" />
+
+    <!-- launch loam -->
+    <include file="$(find loam_velodyne)/launch/loam_velodyne.launch" />
+
+    <!-- launch map_server -->
+    <node pkg="map_server" type="map_server" name="map_server" args="$(find localization_0725)/test_data/basement_0817_.yaml" />
+
+    <!-- pub /odom to pf_node -->
+    <node pkg="get_2d_map" type="main" name="loam_to_2d">
+        <param name="odom_frame" type="string" value="/odom" />
+        <param name="laser_frame" type="string" value="/laser" />
+    </node>
+
+    <!-- pub /laser_scan to pf_node -->
+    <node pkg="localization_0725" type="pc2scan_rt" name="pc2scan">
+        <remap from="/scan" to="/laser_scan" />
+    </node>
+
+    <!-- run pf_node -->
+    <node pkg="localization_0725" type="pf_node" name="pf_node">
+        <remap from="scan" to="/laser_scan" />
+        <remap from="odom" to="/odom" />
+        <rosparam file="$(find localization_0725)/params/prst_localization.yaml" command="load" />
+    </node>
+
+    <node pkg="localization_0725" type="path_planner.py" name="Trajectory_search" output="screen">
+		<param name="save_trajectory" value="0"/>
+		<param name="save_path" value="$(find localization_0725)/trajectories/"/>
+		<param name="publish" value="1"/>
+		<param name="trajectory_topic" value="/trajectory/current"/>
+
+		<param name="odom_topic" value="/pf/odom"/>
+		
+		<param name="show_exploration_buffer" value="1"/>
+		<!-- These params are for the circle search -->
+		<param name="branch_factor" value="31"/> <!-- number of neighbors to expand per node -->
+		<param name="soft_min_radius" value="1.691"/>
+		<param name="soft_min_penalty" value="1.7"/> <!-- Circles below soft_min_radius are penalized by this factor -->
+		<param name="hard_min_radius" value="0.8926"/>   
+		<param name="heuristic_bias" value="1.9"/> <!-- epsilon-admissible coefficient -->
+		<param name="min_goal_overlap" value="0.05"/>
+		<param name="minimum_turn_radius" value="0.8926"/> <!-- defines bounds on exploration -->
+		<param name="exploration_timeout" value="6.0"/>
+		<param name="exploration_coeff" value="0.75"/>
+
+		<!-- These params are for second level A* search -->
+		<param name="refine_trajectory" value="1"/>
+		<param name="fp_branch_factor" value="121"/>
+		<param name="fp_heuristic_bias" value="1.2"/> <!-- epsilon-admissible coefficient -->
+		<param name="fp_soft_min_penalty" value="2.0"/>
+		<param name="fp_exploration_coeff" value="0.2"/>
+		<param name="refining_timeout" value="13.0"/>
+		<param name="fp_minimum_turn_radius" value="0.9"/> <!-- defines bounds on exploration -->
+		<param name="fp_max_circle_radius" value="1.1"/>
+	</node>
+
+	<arg name="lookahead" default="1.5"/>
+	<arg name="max_reacquire" default="3.0"/>
+	<arg name="speed" default="1.5"/>
+
+	<node pkg="localization_0725" type="smoothing_path.py" name="smoothing_path" output="screen">
+		<remap from="/raw_path" to="/loaded_trajectory/recorded_path" />
+		<param name="tolerance" value="0.00001" />
+		<param name="alpha" value="0.2" />
+		<param name="beta" value="0.5" />
+		<param name="iterations" value="50" />
+		<param name="min_point_dist" value="0.5" />
+		<param name="margin" value="1.0" />
+		<param name="should_publish" value="false" />
+		<param name="save" value="false" />
+		<param name="load_or_not" value="false" />
+	</node>	
+	<node pkg="localization_0725" type="pure_pursuit.py" name="Trajectory_follower" output="screen">
+		<remap from="/odom" to="/pf/odom" />
+		<remap from="/trajectory" to="/trajectory/current" />
+
+		<param name="lookahead" value="$(arg lookahead)"/>
+		<!-- if the car is between lookahead and max_reacquire meters, it will attempt to
+		     navigate to the nearest point on the trajectory rather than just stopping -->
+        <param name="lookahead" value="1.5" />
+        <param name="max_reaquire" value="3.0" />
+        <param name="speed" value="1.5" />
+        <param name="wrap" value="0" />
+        <param name="wheelbase" value="0.35" />
+        <param name="margin" value="0.1" />
+        <param name="max_angle" value="0.4538" />
+
+        <param name="angle_noise" value="0.0001" />
+        <param name="load_or_not" value="false" />
+		
+	</node>
+
+	<node pkg="tf" type="static_transform_publisher" name="laser_base_link"
+	    args="0.0 0.0 0.0 0 0 0 1 base_link laser 100" />
+</launch>

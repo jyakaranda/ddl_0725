@@ -2,6 +2,7 @@
 #include <costmap_2d/costmap_2d.h>
 #include <costmap_2d/costmap_2d_ros.h>
 #include <geometry_msgs/Twist.h>
+#include <geometry_msgs/PolygonStamped.h>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <nav_msgs/OccupancyGrid.h>
@@ -30,7 +31,7 @@ bool goal_reached = false;
 bool trajectory = false;
 void CB_reconfigure(TebLocalPlannerReconfigureConfig& reconfig, uint32_t level);
 void GoalCB(const geometry_msgs::PoseStamped::ConstPtr& msg);
-void GlobalPlanCB(const nav_msgs::Path& msg);
+void GlobalPlanCB(const geometry_msgs::PolygonStamped& msg);
 void LocalPlanCB(const ros::TimerEvent& e);
 //void LocalCostMapCB(const nav_msgs::OccupancyGrid& msg);
 void publishZero();
@@ -78,9 +79,19 @@ void GoalCB(const geometry_msgs::PoseStamped::ConstPtr& msg){
     
 }
 
-void GlobalPlanCB(const nav_msgs::Path& msg){
+void GlobalPlanCB(const geometry_msgs::PolygonStamped& msg){
     if(new_goal){
-        *global_plan = msg.poses;
+        for(int i = 0; i< msg.polygon.points.size(); i++){
+            geometry_msgs::PoseStamped message = geometry_msgs::PoseStamped();
+            message.pose.position.x = msg.polygon.points[i].x;
+            message.pose.position.y = msg.polygon.points[i].y;
+            message.pose.position.z = msg.polygon.points[i].z;
+            message.pose.orientation.x = 0;
+            message.pose.orientation.y = 0;
+            message.pose.orientation.z = 0;
+            message.pose.orientation.w = 0;
+            global_plan->push_back(message);
+        }
         new_global_plan = true;
         //new_goal = false;
         trajectory = true;

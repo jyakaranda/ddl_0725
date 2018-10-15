@@ -82,6 +82,7 @@ private:
   pose offset_imu_;
   ros::Time pre_imu_time_;
   Eigen::Matrix4f tf_btol_;
+  tf::Transform current_map2odom_;
 
   bool pose_init_;
   bool odom_init_;
@@ -89,12 +90,12 @@ private:
   int model_pc_num_;
   pthread_mutex_t mutex;
 
-  #ifdef CUDA_FOUND
+#ifdef CUDA_FOUND
   std::shared_ptr<gpu::GNormalDistributionsTransform> anh_gpu_ndt_ptr;
-  #endif
-  #ifdef USE_OMP
+#endif
+#ifdef USE_OMP
   pcl_omp::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ> omp_ndt_;
-  #endif
+#endif
 
   pcl::NormalDistributionsTransform<PointT, PointT> ndt_;
   bool has_converged_;
@@ -117,6 +118,12 @@ private:
   double param_ndt_step_size_;
   double param_ndt_epsilon_;
   int param_method_type_;
+
+  // debug use
+  bool param_debug_;
+  bool rawodom_init_;
+  ros::Publisher pub_rawodom_;
+  nav_msgs::Odometry msg_rawodom_;
 
   /**
    * @brief Save motion data to get a rough pose estimation to give NDT-matching a initial transformation matrix.

@@ -40,7 +40,7 @@ bool NDTLocalization::init()
   sub_map_ = nh_.subscribe<sensor_msgs::PointCloud2>("/map/point_cloud", 1, boost::bind(&NDTLocalization::mapCB, this, _1));
   sub_odom_ = nh_.subscribe<nav_msgs::Odometry>("/odom/imu", 500, boost::bind(&NDTLocalization::odomCB, this, _1));
   sub_point_cloud_ = nh_.subscribe<sensor_msgs::PointCloud2>("/lslidar_point_cloud", 20, boost::bind(&NDTLocalization::pointCloudCB, this, _1));
-  pub_current_pose_ = nh_.advertise<geometry_msgs::PoseStamped>("/current_pose", 100);
+  pub_current_pose_ = nh_.advertise<geometry_msgs::PoseStamped>("/ndt/current_pose", 100);
 
   tf::StampedTransform transform;
   try
@@ -415,7 +415,6 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg
   {
     rawodom_init_ = true;
     tf::poseTFToMsg(transform2, msg_rawodom_.pose.pose);
-    // tf::quaternionTFToMsg(current_map2odom_.getRotation(), msg_rawodom_.pose.pose.orientation);
   }
 
   offset_odom_.reset();

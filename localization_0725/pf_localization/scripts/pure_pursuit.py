@@ -9,7 +9,7 @@ from ackermann_msgs.msg import AckermannDrive, AckermannDriveStamped
 from nav_msgs.msg import Odometry, Path, OccupancyGrid
 from nav_msgs.srv import GetMap
 from localization_0725.srv import GetRawPath, SmoothPath
-from geometry_msgs.msg import PoseWithCovarianceStamped, PoseArray, Pose, Twist, PolygonStamped
+from geometry_msgs.msg import PoseWithCovarianceStamped, PoseArray, Pose, PoseStamped, Twist, PolygonStamped
 from visualization_msgs.msg import Marker
 from copy import deepcopy
 
@@ -76,6 +76,9 @@ class PurePursuit(object):
         # topic to listen for odometry messages, either from particle filter or the simulator
         self.odom_sub = rospy.Subscriber(
             "/odom", Odometry, self.odom_callback, queue_size=1)
+
+        self.cur_pose_sub = rospy.Subscriber(
+            "/current_pose", PoseStamped, self.cur_pose_callback, queue_size=1)
 
         #self.pose_sub = rospy.Subscriber(
         #    "/initialpose",
@@ -156,15 +159,16 @@ class PurePursuit(object):
         '''
         self.trajectory.clear()
         if isinstance(msg, PolygonStamped):
-            print "Receiving new trajectory:", len(msg.polygon.points), "points"
+            print "Receiving new trajectory:", len(
+                msg.polygon.points), "points"
             self.trajectory.fromPolygon(msg.polygon)
         elif isinstance(msg, Path):
             print "Receiving new trajectory:", len(msg.poses), "points"
             self.trajectory.fromPath(msg)
-	else:
-	    print "error trajectory!"
-	    return
-	self.trajectory.publish_viz(duration=0.0)
+        else:
+            print "error trajectory!"
+            return
+        self.trajectory.publish_viz(duration=0.0)
         rospy.wait_for_service("/smooth_path")
         smoothed_path_ = None
         try:
@@ -183,9 +187,33 @@ class PurePursuit(object):
             print 'Service call failed: ', e
             return
         self.pub_smoothed_path_.publish(smoothed_path_)
-	print "path smoothed"
+        print "path smoothed"
 
     def odom_callback(self, msg):
+        ''' Extracts robot state information from the message, and executes pure pursuit control.
+        '''
+        pose = np.array([
+            msg.pose.pose.position.x, msg.pose.pose.position.y,
+            utils.quaternion_to_angle(msg.pose.pose.orientation)
+        ])
+
+        if not self.already_twiddled and not self.trajectory.empty():
+            pid, err = self.twiddle(pose)
+            self.tau_p = pid[0]
+            self.tau_d = pid[2]
+            self.tau_i = pid[1]
+            print "PID: ", pid, " err: ", err
+            self.already_twiddled = True
+
+        self.pure_pursuit(pose)
+
+        # this is for timing info
+        self.odom_timer.tick()
+        self.iters += 1
+        if self.iters % 20 == 0:
+            print "Control fps:", self.odom_timer.fps()
+
+    def cur_pose_callback(self, msg):
         ''' Extracts robot state information from the message, and executes pure pursuit control.
         '''
         pose = np.array([
@@ -466,7 +494,8 @@ class PurePursuit(object):
                     tmp.position.x = current_pose[0]
                     tmp.position.y = current_pose[1]
                     tmp.position.z = 0.
-                    tmp.orientation = utils.angle_to_quaternion(current_pose[2])
+                    tmp.orientation = utils.angle_to_quaternion(
+                        current_pose[2])
                     pa.poses.append(tmp)
                     # if step % 30 == 0:
                     #     pub.publish(pa)

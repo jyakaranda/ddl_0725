@@ -65,6 +65,12 @@ find_package(PCL REQUIRED)
 #   Service1.srv
 #   Service2.srv
 # )
+add_service_files(
+  DIRECTORY srv 
+  FILES
+  SmoothPath.srv
+  GetRawPath.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(

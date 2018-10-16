@@ -47,7 +47,8 @@ class HeuristicSearch(object):
 
         # a global
         self.tiebreaker = count()
-        heapq.heappush(self.frontier, (ss.heuristic, next(self.tiebreaker), ss))
+        heapq.heappush(self.frontier,
+                       (ss.heuristic, next(self.tiebreaker), ss))
 
     def search(self, time_limit):
         if self.goal_state == None:
@@ -161,7 +162,8 @@ class HeuristicSearch(object):
 
     def is_admissible(self, state):
         # return true if the given state is considered admissible - fulfills hard constraints
-        raise NotImplementedError("HeuristicSearch is_admissible not specified")
+        raise NotImplementedError(
+            "HeuristicSearch is_admissible not specified")
 
     def neighbors(self, state):
         # return a discretized set of neighbors of the given state
@@ -268,7 +270,8 @@ class SpaceExploration(HeuristicSearch):
 
     def neighbors(self, state):
         max_angle = utils.max_angle(self.min_turn_radius, state.radius)
-        self.thetas = np.linspace(-max_angle, max_angle, num=self.branch_factor)
+        self.thetas = np.linspace(
+            -max_angle, max_angle, num=self.branch_factor)
         self.euclidean_neighbors[:, 0] = state.radius * np.cos(
             self.thetas + state.angle) + state.center[0]
         self.euclidean_neighbors[:, 1] = state.radius * np.sin(
@@ -299,15 +302,18 @@ class PathPlanner(HeuristicSearch):
     def __init__(self, omap):
         # fetch relevant parameters
         self.branch_factor = int(rospy.get_param("~fp_branch_factor"))
-        self.min_turn_radius = float(rospy.get_param("~fp_minimum_turn_radius"))
+        self.min_turn_radius = float(
+            rospy.get_param("~fp_minimum_turn_radius"))
         self.soft_min_radius = float(rospy.get_param("~soft_min_radius"))
         self.soft_min_penalty = float(rospy.get_param("~fp_soft_min_penalty"))
         self.hard_min_radius = float(rospy.get_param("~hard_min_radius"))
         self.heuristic_bias = float(rospy.get_param("~fp_heuristic_bias"))
         self.min_goal_overlap = float(rospy.get_param("~min_goal_overlap"))
         # self.half_space_theta = float(rospy.get_param("~half_space_theta"))
-        self.exploration_coeff = float(rospy.get_param("~fp_exploration_coeff"))
-        self.max_circle_radius = float(rospy.get_param("~fp_max_circle_radius"))
+        self.exploration_coeff = float(
+            rospy.get_param("~fp_exploration_coeff"))
+        self.max_circle_radius = float(
+            rospy.get_param("~fp_max_circle_radius"))
 
         self.map = omap
         self.next_goal = None
@@ -513,8 +519,10 @@ class FindTrajectory(object):
             PoseStamped,
             self.goal_point_callback,
             queue_size=1)
-        self.odom_sum = rospy.Subscriber(
+        self.odom_sub = rospy.Subscriber(
             self.odom_topic, Odometry, self.odom_callback, queue_size=1)
+        self.cur_pose_sub = rospy.Subscriber(
+            "/current_pose", PoseStamped, self.cur_pose_callback, queue_size=1)
 
         print "Initialized. Waiting on messages..."
 
@@ -693,6 +701,15 @@ class FindTrajectory(object):
         self.last_pose = np.array([
             msg.pose.pose.position.x, msg.pose.pose.position.y,
             utils.quaternion_to_angle(msg.pose.pose.orientation)
+        ])
+        self.last_pose_time = time.time()
+
+    def cur_pose_callback(self, msg):
+        if not self.has_recent_pose():
+            print "Recieved Pose..."
+        self.last_pose = np.array([
+            msg.pose.position.x, msg.pose.position.y,
+            utils.quaternion_to_angle(msg.pose.orientation)
         ])
         self.last_pose_time = time.time()
 

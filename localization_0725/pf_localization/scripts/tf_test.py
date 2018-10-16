@@ -44,4 +44,4 @@ def nearest_point_on_trajectory(point, trajectory):
 point = np.array([2, 1], dtype=float)
 trajectories = np.array([[0, 0], [1, 3], [1, 2], [2, 2]], dtype=float)
 ls = [[0, 0], [1, 3], [1, 2], [2, 2]]
-print np.sign(-0.0)
+print trajectories[1][1]

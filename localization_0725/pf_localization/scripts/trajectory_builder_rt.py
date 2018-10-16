@@ -20,7 +20,7 @@ class BuildTrajectory(object):
             rospy.get_param(
                 "~save_path",
                 default=
-                "/home/lenovo/zh/workspace/catkin_ws/src/ddl_0725/localization_0725/trajectories"
+                "/home/nvidia/workspace/catkin_ws/src/ddl_0725/localization_0725/trajectories"
             ),
             time.strftime("%Y-%m-%d-%H-%M-%S") + ".traj")
         self.trajectory = LineTrajectory("/built_trajectory")
@@ -31,15 +31,6 @@ class BuildTrajectory(object):
 
         # save the built trajectory on shutdown
         rospy.on_shutdown(self.saveTrajectory)
-
-    def clicked_point_callback(self, msg):
-        if isinstance(msg, PointStamped):
-            self.trajectory.addPoint(msg.point)
-        elif isinstance(msg, PoseStamped):
-            self.trajectory.addPoint(msg.pose.position)
-
-        # publish visualization of the path being built
-        self.trajectory.publish_viz()
 
     def odomCB(self, msg):
         self.trajectory.addPoint(

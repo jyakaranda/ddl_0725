@@ -63,7 +63,7 @@ int main(int argc, char** argv)
     global_costmap_->pause();
     local_costmap_ = new costmap_2d::Costmap2DROS("local_costmap", *tf_);
     local_costmap_->pause();
-    teb_local.initialize("local_planner", tf_, local_costmap_);
+    teb_local.initialize("TebLocalPlannerROS", tf_, local_costmap_);
     global_costmap_->start();
     local_costmap_->start();
     ros::spin();

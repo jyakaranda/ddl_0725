@@ -32,10 +32,11 @@ du
     </node>
 
     <!--- Run optimization test node -->
-    <node pkg="teb_local_planner" type="main" name="main" output="screen" />
+    <node pkg="teb_local_planner" type="main" name="main" output="screen" >
         <rosparam file="$(find teb_local_planner)/cfg/costmap_common_params.yaml" command="load" ns="global_costmap" />
         <rosparam file="$(find teb_local_planner)/cfg/costmap_common_params.yaml" command="load" ns="local_costmap" />
         <rosparam file="$(find teb_local_planner)/cfg/local_costmap_params.yaml" command="load" />
         <rosparam file="$(find teb_local_planner)/cfg/global_costmap_params.yaml" command="load" />
         <rosparam file="$(find teb_local_planner)/cfg/teb_local_planner_params.yaml" command="load" />
+    </node>
 </launch>

@@ -6,13 +6,14 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /Map1
         - /Imu1/Axes properties1
         - /PointCloud21
         - /PointCloud22
         - /Odometry1
-        - /Odometry1/Status1
         - /Odometry2
         - /Odometry2/Shape1
+        - /Path1
       Splitter Ratio: 0.5
     Tree Height: 747
   - Class: rviz/Selection
@@ -250,6 +251,37 @@ Visualization Manager:
       Topic: /map/odom
       Unreliable: false
       Value: true
+    - Class: rviz/Marker
+      Enabled: false
+      Marker Topic: /rough_trajectory/end_pose
+      Name: Marker
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: false
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 25; 255; 0
+      Enabled: true
+      Head Diameter: 0.300000012
+      Head Length: 0.200000003
+      Length: 0.300000012
+      Line Style: Lines
+      Line Width: 0.0299999993
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Radius: 0.0299999993
+      Shaft Diameter: 0.100000001
+      Shaft Length: 0.100000001
+      Topic: /trajectory/current
+      Unreliable: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -275,16 +307,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 140.203049
+      Distance: 221.849106
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 17.8006725
-        Y: 1.72907972
-        Z: -27.4860287
+        X: -0.0252894759
+        Y: 31.2941895
+        Z: -120.764626
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
@@ -293,7 +325,7 @@ Visualization Manager:
       Pitch: 1.56979632
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.21537137
+      Yaw: 3.18537188
     Saved: ~
 Window Geometry:
   Displays:

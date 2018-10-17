@@ -1,15 +1,15 @@
 <!-- -->
 <launch>
-    <arg name="resolution" default="0.1" />
-    <arg name="map_width" default="50" />
-    <arg name="map_height" default="50" />
+    <arg name="resolution" default="0.3" />
+    <arg name="map_width" default="75" />
+    <arg name="map_height" default="85" />
     <arg name="points_topic" default="/map/point_cloud" />
-    <arg name="offset_x" default="25.0" />
-    <arg name="offset_y" default="0.0" />
+    <arg name="offset_x" default="12.0" />
+    <arg name="offset_y" default="20.0" />
     <arg name="offset_z" default="-2.0" />
     <arg name="height_limit" default="0.1" />
-    <arg name="car_width" default="1.75" />
-    <arg name="car_length" default="4.5" />
+    <arg name="car_width" default="0.5" />
+    <arg name="car_length" default="0.5" />
     <arg name="filter" default="true" />
 
 

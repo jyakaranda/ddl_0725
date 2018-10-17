@@ -1,6 +1,6 @@
 <launch>
 
-  <!-- <include file="$(find common)/launch/static_tf.launch" /> -->
+  <include file="$(find common)/launch/static_tf.launch" />
   <!-- <include file="$(find imu_f)/launch/imu_ahrs.launch" /> -->
 
   <!-- <node pkg="pcl_ros" type="pcd_to_pointcloud" name="static_map_node" args="$(find static_map)/map_file/0.pcd">
@@ -15,6 +15,9 @@
     <remap from="/static_map" to="/map/point_cloud" />
   </node>
 
+  <node pkg="map_server" type="map_server" name="gridmap_node" args="$(find static_map)/map_file/gridmap_1010.yaml">
+  </node>
+
   <!-- <node pkg="map_filter" type="rt_filter_node" name="rt_filter_node">
     <param name="filter_x" value="10.0" />
     <param name="filter_y" value="10.0" />
@@ -25,6 +28,7 @@
   <include file="$(find lidar_euclidean_cluster_detect)/launch/lidar_euclidean_cluster_detect.launch">
     <arg name="output_frame" value="/laser" />
     <arg name="points_node" value="/lslidar_point_cloud" />
+    <arg name="use_gpu" value="true" />
   </include>
 
   <include file="$(find odom_imu)/launch/odom_imu.launch" />

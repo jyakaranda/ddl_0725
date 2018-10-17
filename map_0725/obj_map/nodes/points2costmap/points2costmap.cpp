@@ -37,17 +37,20 @@
 
 namespace
 {
-constexpr double HEIGHT_LIMIT = 0.1;  // from sensor
-constexpr double CAR_LENGTH = 4.5;
-constexpr double CAR_WIDTH = 1.75;
+double HEIGHT_LIMIT = 0.1; // from sensor
+double CAR_LENGTH = 4.5;
+double CAR_WIDTH = 1.75;
 
 ros::Publisher g_costmap_pub;
 double g_resolution;
 int g_cell_width;
 int g_cell_height;
+double g_map_width;
+double g_map_height;
 double g_offset_x;
 double g_offset_y;
 double g_offset_z;
+bool g_filter;
 
 pcl::PointCloud<pcl::PointXYZ> g_obstacle_sim_points;
 bool g_use_obstacle_sim = false;
@@ -59,9 +62,9 @@ void callbackFromObstacleSim(const sensor_msgs::PointCloud2ConstPtr &msg)
   g_use_obstacle_sim = true;
 }
 
-void joinPoints(const pcl::PointCloud<pcl::PointXYZ>& points1, pcl::PointCloud<pcl::PointXYZ>* points2)
+void joinPoints(const pcl::PointCloud<pcl::PointXYZ> &points1, pcl::PointCloud<pcl::PointXYZ> *points2)
 {
-  for (const auto& p : points1)
+  for (const auto &p : points1)
   {
     points2->push_back(p);
   }
@@ -70,8 +73,22 @@ void joinPoints(const pcl::PointCloud<pcl::PointXYZ>& points1, pcl::PointCloud<p
 std::vector<int> createCostMap(const pcl::PointCloud<pcl::PointXYZ> &scan)
 {
   std::vector<int> cost_map(g_cell_width * g_cell_height, 0);
-  double map_center_x = (g_cell_width / 2.0) * g_resolution - g_offset_x;
-  double map_center_y = (g_cell_height / 2.0) * g_resolution - g_offset_y;
+  double map_center_x = g_map_width / 2.0 - g_offset_x;
+  double map_center_y = g_map_height / 2.0 - g_offset_y;
+  for (int r = 0; r < g_cell_height; r++)
+  {
+    for (int c = 0; c < g_cell_width; c++)
+    {
+      if (r < 2 || r > g_cell_height - 2)
+      {
+        cost_map[r * g_cell_width + c] = -1;
+      }
+      else if (c < 2 || c > g_cell_width - 2)
+      {
+        cost_map[r * g_cell_width + c] = -1;
+      }
+    }
+  }
 
   // scan points are in sensor frame
   for (const auto &p : scan.points)
@@ -103,8 +120,8 @@ void setOccupancyGrid(nav_msgs::OccupancyGrid *og)
   og->info.resolution = g_resolution;
   og->info.width = g_cell_width;
   og->info.height = g_cell_height;
-  og->info.origin.position.x = (-1) * (g_cell_width / 2.0) * g_resolution + g_offset_x;
-  og->info.origin.position.y = (-1) * (g_cell_height / 2.0) * g_resolution + g_offset_y;
+  og->info.origin.position.x = (-1) * g_map_width / 2.0 + g_offset_x;
+  og->info.origin.position.y = (-1) * g_map_height / 2.0 + g_offset_y;
   og->info.origin.position.z = g_offset_z;
   og->info.origin.orientation.x = 0.0;
   og->info.origin.orientation.y = 0.0;
@@ -112,19 +129,24 @@ void setOccupancyGrid(nav_msgs::OccupancyGrid *og)
   og->info.origin.orientation.w = 1.0;
 }
 
-std::vector<int> filterCostMap(std::vector<int>& cost_map)
+std::vector<int> filterCostMap(std::vector<int> &cost_map)
 {
   std::vector<int> filtered_cost_map(cost_map.size(), 0);
 
   // cells around reference (x, y)
-  std::vector<std::pair<int, int>> neighborhood
-  {
-    std::make_pair(-1, -1), std::make_pair( 0, -1), std::make_pair( 1, -1),
-    std::make_pair(-1,  0), std::make_pair( 1,  0),
-    std::make_pair(-1,  1), std::make_pair( 0,  1), std::make_pair( 1,  1),
+  std::vector<std::pair<int, int>> neighborhood{
+      std::make_pair(-1, -1),
+      std::make_pair(0, -1),
+      std::make_pair(1, -1),
+      std::make_pair(-1, 0),
+      std::make_pair(1, 0),
+      std::make_pair(-1, 1),
+      std::make_pair(0, 1),
+      std::make_pair(1, 1),
   };
 
-  for (size_t size = cost_map.size(), i = 0; i < size; i++) {
+  for (size_t size = cost_map.size(), i = 0; i < size; i++)
+  {
     int ref_cost = cost_map[i];
 
     int ref_x = i % g_cell_width;
@@ -132,12 +154,16 @@ std::vector<int> filterCostMap(std::vector<int>& cost_map)
 
     // we don't have to filter if the cost is 0
     if (ref_cost <= 0)
+    {
+      filtered_cost_map[i] = ref_cost;
       continue;
+    }
 
     filtered_cost_map[i] += ref_cost;
 
     // increase the cost for each neighborhood cell
-    for (const auto& n : neighborhood) {
+    for (const auto &n : neighborhood)
+    {
       int neighbor_x = ref_x + n.first;
       int neighbor_y = ref_y + n.second;
 
@@ -147,11 +173,11 @@ std::vector<int> filterCostMap(std::vector<int>& cost_map)
       int neighbor_index = neighbor_x + neighbor_y * g_cell_width;
       filtered_cost_map[neighbor_index] += ref_cost;
     }
-
   }
 
   // handle the cost over 100
-  for (auto &cost : filtered_cost_map) {
+  for (auto &cost : filtered_cost_map)
+  {
     if (cost > 100)
       cost = 100;
   }
@@ -182,11 +208,10 @@ void createOccupancyGrid(const sensor_msgs::PointCloud2::ConstPtr &input)
   // create cost map with pointcloud
   std::vector<int> cost_map = createCostMap(scan);
 
-  /*
-  bool filter = false;
-  if (filter)
+  if (g_filter)
+  {
     cost_map = filterCostMap(cost_map);
-  */
+  }
 
   og.data.insert(og.data.end(), cost_map.begin(), cost_map.end());
   g_costmap_pub.publish(og);
@@ -194,7 +219,7 @@ void createOccupancyGrid(const sensor_msgs::PointCloud2::ConstPtr &input)
   count++;
 }
 
-}  // namespace
+} // namespace
 
 int main(int argc, char **argv)
 {
@@ -205,13 +230,19 @@ int main(int argc, char **argv)
   // Subscribing topic of PointCloud2 message
   std::string points_topic;
 
-  private_nh.param<double>("resolution", g_resolution, 1.0);
-  private_nh.param<int>("cell_width", g_cell_width, 50);
-  private_nh.param<int>("cell_height", g_cell_height, 50);
+  private_nh.param<double>("resolution", g_resolution, 0.1);
+  private_nh.param<double>("map_width", g_map_width, 50.);
+  private_nh.param<double>("map_height", g_map_height, 50.);
   private_nh.param<std::string>("points_topic", points_topic, "points_lanes");
   private_nh.param<double>("offset_x", g_offset_x, 30.0);
   private_nh.param<double>("offset_y", g_offset_y, 0.0);
   private_nh.param<double>("offset_z", g_offset_z, -2.0);
+  private_nh.param<double>("height_limit", HEIGHT_LIMIT, 0.1);
+  private_nh.param<double>("car_width", CAR_WIDTH, 1.75);
+  private_nh.param<double>("car_length", CAR_LENGTH, 4.5);
+  private_nh.param<bool>("filter", g_filter, false);
+  g_cell_width = static_cast<int>(std::ceil(g_map_width / g_resolution));
+  g_cell_height = static_cast<int>(std::ceil(g_map_height / g_resolution));
 
   g_costmap_pub = nh.advertise<nav_msgs::OccupancyGrid>("realtime_cost_map", 10);
   ros::Subscriber points_sub = nh.subscribe(points_topic, 10, createOccupancyGrid);

@@ -18,6 +18,7 @@
     <include file="$(find lidar_euclidean_cluster_detect)/launch/lidar_euclidean_cluster_detect.launch">
         <arg name="output_frame" value="/laser" />
         <arg name="points_node" value="/lslidar_point_cloud" />
+        <arg name="use_gpu" value="true" />
     </include>
     
     <node pkg="ndt_localization" type="ndt_localization_node" name="ndt_localization_node" output="screen">

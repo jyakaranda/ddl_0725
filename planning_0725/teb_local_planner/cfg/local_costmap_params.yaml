@@ -8,7 +8,7 @@ local_costmap:
   width: 5.5
   height: 5.5
   resolution: 0.1
-  transform_tolerance: 0.5
+  transform_tolerance: 5
   
   plugins:
    - {name: static_layer,        type: "costmap_2d::StaticLayer"}

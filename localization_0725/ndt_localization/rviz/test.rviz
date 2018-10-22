@@ -306,6 +306,22 @@ Visualization Manager:
       Topic: /built_trajectory/recorded_path
       Unreliable: false
       Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /ndt/loc_conf
+      Name: Marker
+      Namespaces:
+        ndt: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /ndt/trans_prob
+      Name: Marker
+      Namespaces:
+        ndt: true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -331,16 +347,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 130.771378
+      Distance: 160.803909
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 16.2475624
-        Y: 20.2308731
-        Z: -74.759903
+        X: 12.1482286
+        Y: 11.2584496
+        Z: -74.7633972
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
@@ -349,7 +365,7 @@ Visualization Manager:
       Pitch: 1.56979632
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.21537232
+      Yaw: 3.16537285
     Saved: ~
 Window Geometry:
   Displays:

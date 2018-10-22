@@ -26,6 +26,7 @@ find_package(catkin REQUIRED COMPONENTS
   rosbag
   sensor_msgs
   std_msgs
+  visualization_msgs
   tf
   # ${PCL_OPENMP_PACKAGES}
 )

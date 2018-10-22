@@ -41,6 +41,10 @@ bool NDTLocalization::init()
   sub_odom_ = nh_.subscribe<nav_msgs::Odometry>("/odom/imu", 500, boost::bind(&NDTLocalization::odomCB, this, _1));
   sub_point_cloud_ = nh_.subscribe<sensor_msgs::PointCloud2>("/lslidar_point_cloud", 20, boost::bind(&NDTLocalization::pointCloudCB, this, _1));
   pub_current_pose_ = nh_.advertise<geometry_msgs::PoseStamped>("/ndt/current_pose", 100);
+  pub_loc_conf_ = nh_.advertise<visualization_msgs::Marker>("/ndt/loc_conf", 1);
+  pub_trans_prob_ = nh_.advertise<visualization_msgs::Marker>("/ndt/trans_prob", 1);
+  msg_loc_conf_.header.frame_id = param_map_frame_;
+  msg_trans_prob_.header.frame_id = param_map_frame_;
 
   tf::StampedTransform transform;
   try
@@ -416,6 +420,40 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg
     rawodom_init_ = true;
     tf::poseTFToMsg(transform2, msg_rawodom_.pose.pose);
   }
+
+  msg_loc_conf_.header.stamp = msg->header.stamp;
+  msg_loc_conf_.ns = "ndt";
+  msg_loc_conf_.id = 0;
+  msg_loc_conf_.type = visualization_msgs::Marker::SPHERE;
+  msg_loc_conf_.action = visualization_msgs::Marker::ADD;
+  msg_loc_conf_.pose.position = msg_current_pose_.pose.position;
+  std_msgs::ColorRGBA green;
+  green.a = 1.0;
+  green.b = 0.0;
+  green.r = 0.0;
+  green.g = 1.0;
+  msg_loc_conf_.color = green;
+  msg_loc_conf_.scale.x = 6.0 / (trans_probability_ + 0.1);
+  msg_loc_conf_.scale.y = 6.0 / (trans_probability_ + 0.1);
+  msg_loc_conf_.scale.z = 6.0 / (trans_probability_ + 0.1);
+  msg_loc_conf_.frame_locked = true;
+  pub_loc_conf_.publish(msg_loc_conf_);
+
+  msg_trans_prob_.header.stamp = msg->header.stamp;
+  msg_trans_prob_.ns = "ndt";
+  msg_trans_prob_.id = 0;
+  msg_trans_prob_.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+  msg_trans_prob_.action = visualization_msgs::Marker::ADD;
+  msg_trans_prob_.pose.position.y = -10.;
+  msg_trans_prob_.color = green;
+  msg_trans_prob_.scale.x = 0.;
+  msg_trans_prob_.scale.y = 0.;
+  msg_trans_prob_.scale.z = 1.;
+  msg_trans_prob_.frame_locked = true;
+  std::stringstream ss;
+  ss << "transform probability: " << trans_probability_;
+  msg_trans_prob_.text = ss.str();
+  pub_trans_prob_.publish(msg_trans_prob_);
 
   offset_odom_.reset();
   // current_pose_odom_ = current_pose_;

@@ -10,8 +10,11 @@
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <visualization_msgs/Marker.h>
 
 #include <iostream>
+#include <string>
+#include <sstream>
 #include <pcl/point_types.h>
 #include <pcl/registration/ndt.h>
 #include <pcl/filters/approximate_voxel_grid.h>
@@ -59,6 +62,10 @@ private:
 
   ros::Publisher pub_current_pose_;
   geometry_msgs::PoseStamped msg_current_pose_;
+  ros::Publisher pub_loc_conf_;
+  visualization_msgs::Marker msg_loc_conf_;
+  ros::Publisher pub_trans_prob_;
+  visualization_msgs::Marker msg_trans_prob_;
 
   ros::Subscriber sub_odom_;
   nav_msgs::Odometry::ConstPtr msg_odom_; // under odom frame

@@ -14,4 +14,4 @@ ndt_step_size: 0.1
 ndt_epsilon: 0.01
 method_type: 1
 
-debug: true
+debug: false

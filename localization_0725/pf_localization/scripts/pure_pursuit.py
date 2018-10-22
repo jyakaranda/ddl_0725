@@ -8,7 +8,7 @@ import rospy
 from ackermann_msgs.msg import AckermannDrive, AckermannDriveStamped
 from nav_msgs.msg import Odometry, Path, OccupancyGrid
 from nav_msgs.srv import GetMap
-from localization_0725.srv import GetRawPath, SmoothPath
+from pf_localization.srv import GetRawPath, SmoothPath
 from geometry_msgs.msg import PoseWithCovarianceStamped, PoseArray, Pose, PoseStamped, Twist, PolygonStamped
 from visualization_msgs.msg import Marker
 from copy import deepcopy

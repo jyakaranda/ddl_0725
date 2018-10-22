@@ -8,7 +8,7 @@ import rospy
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import OccupancyGrid, Path
 from nav_msgs.srv import GetMap
-from localization_0725.srv import *
+from pf_localization.srv import *
 
 from utils import angle_to_quaternion, make_header, LineTrajectory
 import os
@@ -32,7 +32,7 @@ class Smoothing(object):
             rospy.get_param(
                 "~save_path",
                 default=
-                "/home/nvidia/workspace/catkin_ws/src/ddl_0725/localization_0725/trajectories"
+                "/home/nvidia/workspace/catkin_ws/src/ddl_0725/pf_localization/trajectories"
             ), "smoothed-" + time.strftime("%Y-%m-%d-%H-%M-%S") + ".traj")
         self.param_save = rospy.get_param("~save", default=False)
         self.param_load_or_not = rospy.get_param('~load_or_not', default=False)

@@ -5,7 +5,7 @@ from geometry_msgs.msg import PolygonStamped
 from nav_msgs.msg import Path
 import time, os
 from utils import LineTrajectory
-from localization_0725.srv import *
+from pf_localization.srv import *
 
 
 class LoadTrajectory(object):
@@ -16,7 +16,7 @@ class LoadTrajectory(object):
         self.path = rospy.get_param(
             "~trajectory",
             default=
-            "/home/nvidia/workspace/catkin_ws/src/ddl_0725/localization_0725/trajectories/2018-08-09-16-16-58.traj"
+            "/home/nvidia/workspace/catkin_ws/src/ddl_0725/pf_localization/trajectories/2018-08-09-16-16-58.traj"
         )
         self.should_publish = bool(rospy.get_param("~publish", default=True))
         self.pub_topic = rospy.get_param(

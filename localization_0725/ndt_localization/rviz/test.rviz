@@ -14,6 +14,7 @@ Panels:
         - /Odometry2
         - /Odometry2/Shape1
         - /Path1
+        - /Path2
       Splitter Ratio: 0.5
     Tree Height: 747
   - Class: rviz/Selection
@@ -279,7 +280,30 @@ Visualization Manager:
       Radius: 0.0299999993
       Shaft Diameter: 0.100000001
       Shaft Length: 0.100000001
-      Topic: /trajectory/current
+      Topic: /loaded_trajectory/recorded_path
+      Unreliable: false
+      Value: true
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 255; 255; 0
+      Enabled: true
+      Head Diameter: 0.300000012
+      Head Length: 0.200000003
+      Length: 0.300000012
+      Line Style: Lines
+      Line Width: 0.0299999993
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Radius: 0.0299999993
+      Shaft Diameter: 0.100000001
+      Shaft Length: 0.100000001
+      Topic: /built_trajectory/recorded_path
       Unreliable: false
       Value: true
   Enabled: true
@@ -307,16 +331,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 221.849106
+      Distance: 130.771378
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.0252894759
-        Y: 31.2941895
-        Z: -120.764626
+        X: 16.2475624
+        Y: 20.2308731
+        Z: -74.759903
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
@@ -325,7 +349,7 @@ Visualization Manager:
       Pitch: 1.56979632
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.18537188
+      Yaw: 3.21537232
     Saved: ~
 Window Geometry:
   Displays:

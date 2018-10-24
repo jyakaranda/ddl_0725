@@ -1,5 +1,7 @@
 <launch>
-        
+        <node pkg="map_server" type="map_server" name="gridmap_server" args="$(find static_map)/map_file/gridmap_1010.yaml">
+    </node>
+    <include file="$(find ndt_localization)/launch/test/test_path_planner.launch"/>        
     <!--- Run optimization test node -->
     <node pkg="teb_local_planner" type="main" name="main" output="screen">
         <rosparam file="$(find teb_local_planner)/cfg/costmap_common_params.yaml" command="load" ns="global_costmap" />

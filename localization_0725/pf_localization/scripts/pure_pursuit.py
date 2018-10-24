@@ -165,6 +165,7 @@ class PurePursuit(object):
         elif isinstance(msg, Path):
             print "Receiving new trajectory:", len(msg.poses), "points"
             self.trajectory.fromPath(msg)
+            return
         else:
             print "error trajectory!"
             return
@@ -217,8 +218,8 @@ class PurePursuit(object):
         ''' Extracts robot state information from the message, and executes pure pursuit control.
         '''
         pose = np.array([
-            msg.pose.pose.position.x, msg.pose.pose.position.y,
-            utils.quaternion_to_angle(msg.pose.pose.orientation)
+            msg.pose.position.x, msg.pose.position.y,
+            utils.quaternion_to_angle(msg.pose.orientation)
         ])
 
         if not self.already_twiddled and not self.trajectory.empty():
@@ -277,6 +278,7 @@ class PurePursuit(object):
         '''
         # stop if no trajectory has been received
         if self.trajectory.empty():
+            print "empty traj."
             return self.stop()
 
         # this instructs the trajectory to convert the list of waypoints into a numpy matrix

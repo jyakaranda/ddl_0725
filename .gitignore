@@ -2,6 +2,8 @@
 *.bag
 *.pcd
 
+*.pyc
+
 *.vscode
 
 # cmake

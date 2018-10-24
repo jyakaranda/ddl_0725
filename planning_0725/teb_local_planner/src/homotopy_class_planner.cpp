@@ -108,14 +108,14 @@ bool HomotopyClassPlanner::plan(const tf::Pose& start, const tf::Pose& goal, con
 bool HomotopyClassPlanner::plan(const PoseSE2& start, const PoseSE2& goal, const geometry_msgs::Twist* start_vel, bool free_goal_vel)
 {
   ROS_ASSERT_MSG(initialized_, "Call initialize() first.");
-
+  ROS_INFO("start plan");
   // Update old TEBs with new start, goal and velocity
   updateAllTEBs(&start, &goal, start_vel);
-
   // Init new TEBs based on newly explored homotopy classes
   exploreEquivalenceClassesAndInitTebs(start, goal, cfg_->obstacles.min_obstacle_dist, start_vel);
   // update via-points if activated
   updateReferenceTrajectoryViaPoints(cfg_->hcp.viapoints_all_candidates);
+  ROS_INFO("optimize");
   // Optimize all trajectories in alternative homotopy classes
   optimizeAllTEBs(cfg_->optim.no_inner_iterations, cfg_->optim.no_outer_iterations);
   // Delete any detours
@@ -217,7 +217,6 @@ void HomotopyClassPlanner::renewAndAnalyzeOldTebs(bool delete_detours)
   // Collect h-signatures for all existing TEBs and store them together with the corresponding iterator / pointer:
 //   typedef std::list< std::pair<TebOptPlannerContainer::iterator, std::complex<long double> > > TebCandidateType;
 //   TebCandidateType teb_candidates;
-
   // get new homotopy classes and delete multiple TEBs per homotopy class
   TebOptPlannerContainer::iterator it_teb = tebs_.begin();
   while(it_teb != tebs_.end())
@@ -228,16 +227,16 @@ void HomotopyClassPlanner::renewAndAnalyzeOldTebs(bool delete_detours)
       it_teb = tebs_.erase(it_teb); // delete candidate and set iterator to the next valid candidate
       continue;
     }
-
     // calculate equivalence class for the current candidate
     EquivalenceClassPtr equivalence_class = calculateEquivalenceClass(it_teb->get()->teb().poses().begin(), it_teb->get()->teb().poses().end(), getCplxFromVertexPosePtr , obstacles_,
                                                                       it_teb->get()->teb().timediffs().begin(), it_teb->get()->teb().timediffs().end());
 
 //     teb_candidates.push_back(std::make_pair(it_teb,H));
-
+    ROS_INFO("1");
     // WORKAROUND until the commented code below works
     // Here we do not compare cost values. Just first come first serve...
     bool new_flag = addEquivalenceClassIfNew(equivalence_class);
+    ROS_INFO("2");
     if (!new_flag)
     {
       it_teb = tebs_.erase(it_teb);
@@ -328,10 +327,11 @@ void HomotopyClassPlanner::updateReferenceTrajectoryViaPoints(bool all_trajector
 
 void HomotopyClassPlanner::exploreEquivalenceClassesAndInitTebs(const PoseSE2& start, const PoseSE2& goal, double dist_to_obst, const geometry_msgs::Twist* start_vel)
 {
+  ROS_INFO("!");
   // first process old trajectories
   renewAndAnalyzeOldTebs(false);
-
   // inject initial plan if available and not yet captured
+  ROS_INFO("!!");
   if (initial_plan_)
   {
     initial_plan_teb_ = addAndInitNewTeb(*initial_plan_, start_vel);
@@ -341,7 +341,6 @@ void HomotopyClassPlanner::exploreEquivalenceClassesAndInitTebs(const PoseSE2& s
     initial_plan_teb_.reset();
     initial_plan_teb_ = getInitialPlanTEB(); // this method searches for initial_plan_eq_class_ in the teb container (-> if !initial_plan_teb_)
   }
-
   // now explore new homotopy classes and initialize tebs if new ones are found. The appropriate createGraph method is chosen via polymorphism.
   graph_search_->createGraph(start,goal,dist_to_obst,cfg_->hcp.obstacle_heading_threshold, start_vel);
 }
@@ -350,12 +349,10 @@ void HomotopyClassPlanner::exploreEquivalenceClassesAndInitTebs(const PoseSE2& s
 TebOptimalPlannerPtr HomotopyClassPlanner::addAndInitNewTeb(const PoseSE2& start, const PoseSE2& goal, const geometry_msgs::Twist* start_velocity)
 {
   TebOptimalPlannerPtr candidate =  TebOptimalPlannerPtr( new TebOptimalPlanner(*cfg_, obstacles_, robot_model_));
-
   candidate->teb().initTrajectoryToGoal(start, goal, 0, cfg_->robot.max_vel_x, cfg_->trajectory.min_samples, cfg_->trajectory.allow_init_with_backwards_motion);
 
   if (start_velocity)
     candidate->setVelocityStart(*start_velocity);
-
   EquivalenceClassPtr H = calculateEquivalenceClass(candidate->teb().poses().begin(), candidate->teb().poses().end(), getCplxFromVertexPosePtr, obstacles_,
                                                     candidate->teb().timediffs().begin(), candidate->teb().timediffs().end());
 
@@ -371,14 +368,12 @@ TebOptimalPlannerPtr HomotopyClassPlanner::addAndInitNewTeb(const PoseSE2& start
 
 
 TebOptimalPlannerPtr HomotopyClassPlanner::addAndInitNewTeb(const std::vector<geometry_msgs::PoseStamped>& initial_plan, const geometry_msgs::Twist* start_velocity)
-{
+{ 
   TebOptimalPlannerPtr candidate = TebOptimalPlannerPtr( new TebOptimalPlanner(*cfg_, obstacles_, robot_model_));
-
   candidate->teb().initTrajectoryToGoal(initial_plan, cfg_->robot.max_vel_x, true, cfg_->trajectory.min_samples, cfg_->trajectory.allow_init_with_backwards_motion);
 
   if (start_velocity)
     candidate->setVelocityStart(*start_velocity);
-
   // store the h signature of the initial plan to enable searching a matching teb later.
   initial_plan_eq_class_ = calculateEquivalenceClass(candidate->teb().poses().begin(), candidate->teb().poses().end(), getCplxFromVertexPosePtr, obstacles_,
                                                      candidate->teb().timediffs().begin(), candidate->teb().timediffs().end());

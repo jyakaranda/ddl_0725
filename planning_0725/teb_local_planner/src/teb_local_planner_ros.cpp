@@ -223,22 +223,20 @@ bool TebLocalPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
   cmd_vel.linear.y = 0;
   cmd_vel.angular.z = 0;
   goal_reached_ = false;  
-  
   // Get robot pose
   tf::Stamped<tf::Pose> robot_pose;
   costmap_ros_->getRobotPose(robot_pose);
   robot_pose_ = PoseSE2(robot_pose);
-    
+  
   // Get robot velocity
   tf::Stamped<tf::Pose> robot_vel_tf;
   odom_helper_.getRobotVel(robot_vel_tf);
   robot_vel_.linear.x = robot_vel_tf.getOrigin().getX();
   robot_vel_.linear.y = robot_vel_tf.getOrigin().getY();
   robot_vel_.angular.z = tf::getYaw(robot_vel_tf.getRotation());
-  
   // prune global plan to cut off parts of the past (spatially before the robot)
   pruneGlobalPlan(*tf_, robot_pose, global_plan_);
-
+ 
   // Transform global plan to the frame of interest (w.r.t. the local costmap)
   std::vector<geometry_msgs::PoseStamped> transformed_plan;
   int goal_idx;
@@ -249,7 +247,6 @@ bool TebLocalPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
     ROS_WARN("Could not transform the global plan to the frame of the controller");
     return false;
   }
-
   // update via-points container
   if (!custom_via_points_active_)
     updateViaPointsContainer(transformed_plan, cfg_.trajectory.global_plan_viapoint_sep);
@@ -269,7 +266,6 @@ bool TebLocalPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
     return true;
   }
   
-  
   // check if we should enter any backup mode and apply settings
   configureBackupModes(transformed_plan, goal_idx);
   
@@ -280,7 +276,6 @@ bool TebLocalPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
     ROS_WARN("Transformed plan is empty. Cannot determine a local plan.");
     return false;
   }
-              
   // Get current goal point (last point of the transformed plan)
   tf::Stamped<tf::Pose> goal_point;
   tf::poseStampedMsgToTF(transformed_plan.back(), goal_point);
@@ -296,7 +291,6 @@ bool TebLocalPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
   {
     robot_goal_.theta() = tf::getYaw(goal_point.getRotation());
   }
-
   // overwrite/update start of the transformed plan with the actual robot position (allows using the plan as initial trajectory)
   if (transformed_plan.size()==1) // plan only contains the goal
   {
@@ -316,13 +310,14 @@ bool TebLocalPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
   // also consider custom obstacles (must be called after other updates, since the container is not cleared)
   updateObstacleContainerWithCustomObstacles();
   
-    
+  ROS_INFO("local plan");
   // Do not allow config changes during the following optimization step
   boost::mutex::scoped_lock cfg_lock(cfg_.configMutex());
-    
+   
   // Now perform the actual planning
 //   bool success = planner_->plan(robot_pose_, robot_goal_, robot_vel_, cfg_.goal_tolerance.free_goal_vel); // straight line init
   bool success = planner_->plan(transformed_plan, &robot_vel_, cfg_.goal_tolerance.free_goal_vel);
+  ROS_INFO("local plan end");
   if (!success)
   {
     planner_->clearPlanner(); // force reinitialization for next time
@@ -333,7 +328,8 @@ bool TebLocalPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
     last_cmd_ = cmd_vel;
     return false;
   }
-         
+  
+  ROS_INFO("check feasibility");       
   // Check feasibility (but within the first few states only)
   if(cfg_.robot.is_footprint_dynamic)
   {
@@ -341,14 +337,14 @@ bool TebLocalPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
     footprint_spec_ = costmap_ros_->getRobotFootprint();
     costmap_2d::calculateMinAndMaxDistances(footprint_spec_, robot_inscribed_radius_, robot_circumscribed_radius);
   }
-
+  ROS_INFO("test6");
   bool feasible = planner_->isTrajectoryFeasible(costmap_model_.get(), footprint_spec_, robot_inscribed_radius_, robot_circumscribed_radius, cfg_.trajectory.feasibility_check_no_poses);
   if (!feasible)
   {
     cmd_vel.linear.x = 0;
     cmd_vel.linear.y = 0;
     cmd_vel.angular.z = 0;
-   
+
     // now we reset everything to start again with the initialization of new trajectories.
     planner_->clearPlanner();
     ROS_WARN("TebLocalPlannerROS: trajectory is not feasible. Resetting planner...");
@@ -359,6 +355,7 @@ bool TebLocalPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
     return false;
   }
 
+  ROS_INFO("get velocity command");
   // Get the velocity command for this sampling interval
   if (!planner_->getVelocityCommand(cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.angular.z))
   {
@@ -369,7 +366,6 @@ bool TebLocalPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
     last_cmd_ = cmd_vel;
     return false;
   }
-  
   // Saturate velocity, if the optimization results violates the constraints (could be possible due to soft constraints).
   saturateVelocity(cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.angular.z, cfg_.robot.max_vel_x, cfg_.robot.max_vel_y,
                    cfg_.robot.max_vel_theta, cfg_.robot.max_vel_x_backwards);
@@ -397,8 +393,9 @@ bool TebLocalPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
   
   // store last command (for recovery analysis etc.)
   last_cmd_ = cmd_vel;
+  ROS_INFO("%f", last_cmd_.linear.x);
   
-  // Now visualize everything    
+// Now visualize everything    
   planner_->visualize();
   visualization_->publishObstacles(obstacles_);
   visualization_->publishViaPoints(via_points_);
@@ -607,7 +604,6 @@ bool TebLocalPlannerROS::pruneGlobalPlan(const tf::TransformListener& tf, const 
 {
   if (global_plan.empty())
     return true;
-  
   try
   {
     // transform robot pose into the plan frame (we do not wait here, since pruning not crucial, if missed a few times)
@@ -666,20 +662,19 @@ bool TebLocalPlannerROS::transformGlobalPlan(const tf::TransformListener& tf, co
       *current_goal_idx = 0;
       return false;
     }
-
     // get plan_to_global_transform from plan frame to global_frame
     tf::StampedTransform plan_to_global_transform;
+    ROS_INFO("%s ,%s", plan_pose.header.frame_id.c_str(), global_frame.c_str());
     tf.waitForTransform(global_frame, ros::Time::now(),
     plan_pose.header.frame_id, plan_pose.header.stamp,
     plan_pose.header.frame_id, ros::Duration(0.5));
     tf.lookupTransform(global_frame, ros::Time(),
     plan_pose.header.frame_id, plan_pose.header.stamp, 
     plan_pose.header.frame_id, plan_to_global_transform);
-
+    
     //let's get the pose of the robot in the frame of the plan
     tf::Stamped<tf::Pose> robot_pose;
     tf.transformPose(plan_pose.header.frame_id, global_pose, robot_pose);
-
     //we'll discard points on the plan that are outside the local costmap
     double dist_threshold = std::max(costmap.getSizeInCellsX() * costmap.getResolution() / 2.0,
                                      costmap.getSizeInCellsY() * costmap.getResolution() / 2.0);

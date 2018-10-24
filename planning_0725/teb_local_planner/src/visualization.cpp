@@ -75,6 +75,7 @@ void TebVisualization::initialize(ros::NodeHandle& nh, const TebConfig& cfg)
 void TebVisualization::publishGlobalPlan(const std::vector<geometry_msgs::PoseStamped>& global_plan) const
 {
   if ( printErrorWhenNotInitialized() ) return;
+  ROS_INFO("vis plan");
   base_local_planner::publishPlan(global_plan, global_plan_pub_); 
 }
 

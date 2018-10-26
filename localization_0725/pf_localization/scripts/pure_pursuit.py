@@ -217,8 +217,8 @@ class PurePursuit(object):
         ''' Extracts robot state information from the message, and executes pure pursuit control.
         '''
         pose = np.array([
-            msg.pose.pose.position.x, msg.pose.pose.position.y,
-            utils.quaternion_to_angle(msg.pose.pose.orientation)
+            msg.pose.position.x, msg.pose.position.y,
+            utils.quaternion_to_angle(msg.pose.orientation)
         ])
 
         if not self.already_twiddled and not self.trajectory.empty():

@@ -310,14 +310,14 @@ bool TebLocalPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
   // also consider custom obstacles (must be called after other updates, since the container is not cleared)
   updateObstacleContainerWithCustomObstacles();
   
-  ROS_INFO("local plan");
+  //ROS_INFO("local plan");
   // Do not allow config changes during the following optimization step
   boost::mutex::scoped_lock cfg_lock(cfg_.configMutex());
    
   // Now perform the actual planning
 //   bool success = planner_->plan(robot_pose_, robot_goal_, robot_vel_, cfg_.goal_tolerance.free_goal_vel); // straight line init
   bool success = planner_->plan(transformed_plan, &robot_vel_, cfg_.goal_tolerance.free_goal_vel);
-  ROS_INFO("local plan end");
+  //ROS_INFO("local plan end");
   if (!success)
   {
     planner_->clearPlanner(); // force reinitialization for next time
@@ -329,7 +329,7 @@ bool TebLocalPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
     return false;
   }
   
-  ROS_INFO("check feasibility");       
+  //ROS_INFO("check feasibility");       
   // Check feasibility (but within the first few states only)
   if(cfg_.robot.is_footprint_dynamic)
   {
@@ -337,7 +337,7 @@ bool TebLocalPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
     footprint_spec_ = costmap_ros_->getRobotFootprint();
     costmap_2d::calculateMinAndMaxDistances(footprint_spec_, robot_inscribed_radius_, robot_circumscribed_radius);
   }
-  ROS_INFO("test6");
+  //ROS_INFO("test6");
   bool feasible = planner_->isTrajectoryFeasible(costmap_model_.get(), footprint_spec_, robot_inscribed_radius_, robot_circumscribed_radius, cfg_.trajectory.feasibility_check_no_poses);
   if (!feasible)
   {
@@ -355,7 +355,7 @@ bool TebLocalPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
     return false;
   }
 
-  ROS_INFO("get velocity command");
+  //ROS_INFO("get velocity command");
   // Get the velocity command for this sampling interval
   if (!planner_->getVelocityCommand(cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.angular.z))
   {
@@ -393,7 +393,7 @@ bool TebLocalPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
   
   // store last command (for recovery analysis etc.)
   last_cmd_ = cmd_vel;
-  ROS_INFO("%f", last_cmd_.linear.x);
+  //ROS_INFO("%f", last_cmd_.linear.x);
   
 // Now visualize everything    
   planner_->visualize();
@@ -828,7 +828,7 @@ double TebLocalPlannerROS::estimateLocalGoalOrientation(const std::vector<geomet
 void TebLocalPlannerROS::saturateVelocity(double& vx, double& vy, double& omega, double max_vel_x, double max_vel_y, double max_vel_theta, double max_vel_x_backwards) const
 {
   // Limit translational velocity for forward driving
-  if (vx > max_vel_x)
+om  if (vx > max_vel_x)
     vx = max_vel_x;
   
   // limit strafing velocity
@@ -839,8 +839,7 @@ void TebLocalPlannerROS::saturateVelocity(double& vx, double& vy, double& omega,
   
   // Limit angular velocity
   if (omega > max_vel_theta)
-    omega = max_vel_theta;
-  else if (omega < -max_vel_theta)
+
     omega = -max_vel_theta;
   
   // Limit backwards velocity

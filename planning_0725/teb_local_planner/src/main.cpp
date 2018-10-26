@@ -45,7 +45,7 @@ int main(int argc, char** argv)
     ros::NodeHandle n("~");
     tf_ = new tf::TransformListener(ros::Duration(10));
     config.loadRosParamFromNodeHandle(n);
-    ros::Timer planner_timer = n.createTimer(ros::Duration(1),LocalPlanCB);
+    ros::Timer planner_timer = n.createTimer(ros::Duration(0.1),LocalPlanCB);
     
     dynamic_recfg = boost::make_shared< dynamic_reconfigure::Server<TebLocalPlannerReconfigureConfig> >(n);
     dynamic_reconfigure::Server<TebLocalPlannerReconfigureConfig>::CallbackType cb = boost::bind(CB_reconfigure, _1, _2);
@@ -155,6 +155,7 @@ void LocalPlanCB(const ros::TimerEvent& e){
             //ROS_INFO("AAAAAAAAAA");
             if(teb_local.computeVelocityCommands(cmd_vel)){//compute中实现了可视化，publish planner,global_planner_
                 //ROS_INFO("BBBB");
+                ROS_INFO("%f",cmd_vel.linear.x);
                 ROS_DEBUG_NAMED( "move_base", "Got a valid command from the local planner: %.3lf, %.3lf, %.3lf",
                                 cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.angular.z );
                 vel_pub_.publish(cmd_vel);

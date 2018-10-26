@@ -93,13 +93,13 @@ class PurePursuit(object):
                 "/move_point/no_pid", PoseArray, queue_size=1)
 
         self.map_data = None
-        rospy.wait_for_service('/static_map')
-        try:
-            get_map = rospy.ServiceProxy('/static_map', GetMap)
-            resp = get_map()
-            self.map_data = resp.map
-        except rospy.ServiceException, e:
-            print "Service call failed: ", e
+#        rospy.wait_for_service('/static_map')
+#        try:
+#            get_map = rospy.ServiceProxy('/static_map', GetMap)
+#            resp = get_map()
+#            self.map_data = resp.map
+#        except rospy.ServiceException, e:
+#            print "Service call failed: ", e
 
         if self.load_or_not:
             rospy.wait_for_service('/get_raw_path')
@@ -165,6 +165,7 @@ class PurePursuit(object):
         elif isinstance(msg, Path):
             print "Receiving new trajectory:", len(msg.poses), "points"
             self.trajectory.fromPath(msg)
+            return
         else:
             print "error trajectory!"
             return
@@ -277,6 +278,7 @@ class PurePursuit(object):
         '''
         # stop if no trajectory has been received
         if self.trajectory.empty():
+            print "empty traj."
             return self.stop()
 
         # this instructs the trajectory to convert the list of waypoints into a numpy matrix

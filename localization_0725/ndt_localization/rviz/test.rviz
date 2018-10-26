@@ -15,6 +15,8 @@ Panels:
         - /Odometry2/Shape1
         - /Path1
         - /Path2
+        - /Map2
+        - /Map3
       Splitter Ratio: 0.5
     Tree Height: 739
   - Class: rviz/Selection
@@ -179,7 +181,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.0500000007
       Style: Flat Squares
-      Topic: /points_cluster
+      Topic: /lslidar_point_cloud
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -303,17 +305,17 @@ Visualization Manager:
       Radius: 0.0299999993
       Shaft Diameter: 0.100000001
       Shaft Length: 0.100000001
-      Topic: /built_trajectory/recorded_path
+      Topic: /trajectory/current
       Unreliable: false
       Value: true
     - Class: rviz/Marker
-      Enabled: true
+      Enabled: false
       Marker Topic: /ndt/loc_conf
       Name: Marker
       Namespaces:
-        ndt: true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /ndt/trans_prob
@@ -321,6 +323,26 @@ Visualization Manager:
       Namespaces:
         ndt: true
       Queue Size: 100
+      Value: true
+    - Alpha: 0.699999988
+      Class: rviz/Map
+      Color Scheme: costmap
+      Draw Behind: false
+      Enabled: true
+      Name: Map
+      Topic: /main/global_costmap/costmap
+      Unreliable: false
+      Use Timestamp: false
+      Value: true
+    - Alpha: 0.699999988
+      Class: rviz/Map
+      Color Scheme: costmap
+      Draw Behind: false
+      Enabled: true
+      Name: Map
+      Topic: /main/local_costmap/costmap
+      Unreliable: false
+      Use Timestamp: false
       Value: true
   Enabled: true
   Global Options:
@@ -347,16 +369,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 160.803909
+      Distance: 137.995728
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 12.1482286
-        Y: 11.2584496
-        Z: -74.7633972
+        X: 13.5926685
+        Y: 15.9451637
+        Z: -74.7619247
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
@@ -365,7 +387,7 @@ Visualization Manager:
       Pitch: 1.56979632
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.16537285
+      Yaw: 3.18037629
     Saved: ~
 Window Geometry:
   Displays:

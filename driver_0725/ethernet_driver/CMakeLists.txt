@@ -116,7 +116,8 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-  include
+  include ${catkin_INCLUDE_DIRS}
+# include
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -211,15 +212,6 @@ add_executable(ethernet_node
 )
 add_dependencies(ethernet_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(ethernet_node
-  ethernet_driver
-  ${catkin_LIBRARIES}
-)
-
-add_executable(ethernet_test
-  src/ethernet_test.cpp
-)
-add_dependencies(ethernet_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(ethernet_test
   ethernet_driver
   ${catkin_LIBRARIES}
 )

@@ -6,6 +6,7 @@
 #include <sensor_msgs/Imu.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Point.h>
+#include <geometry_msgs/Twist.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
 #include "user_protocol.h"
@@ -25,14 +26,21 @@ private:
 
   tf::TransformBroadcaster tf_broadcaster_;
   tf::TransformListener tf_listener_;
+  tf::StampedTransform tf_btoi_;
+  bool tf_init_;
 
   ros::Publisher pub_odom_;
   nav_msgs::Odometry msg_odom_;
 
   ros::Subscriber sub_imu_;
+  sensor_msgs::Imu msg_imu_;
+  ros::Subscriber sub_encoder_;
+  geometry_msgs::TwistStamped msg_encoder_;
+  geometry_msgs::TwistStamped cur_vel_;
 
   ros::Time pre_time_;
   bool first_imu_;
+  bool first_encoder_;
 
   pose pre_pose_;
   pose current_pose_;
@@ -46,7 +54,8 @@ private:
   std::string param_base_frame_;
   std::string param_odom_frame_;
 
-  void imuCB(const sensor_msgs::Imu::ConstPtr& msg);
+  void imuCB(const sensor_msgs::Imu::ConstPtr &msg);
+  void encoderCB(const geometry_msgs::TwistStampedConstPtr &msg);
 };
 
 #endif

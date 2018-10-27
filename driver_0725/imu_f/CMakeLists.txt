@@ -13,7 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
 	sensor_msgs 
 	geometry_msgs
 	std_msgs
-	tf
+  tf
 )
 
 
@@ -58,6 +58,7 @@ find_package(catkin REQUIRED COMPONENTS
 #   FILES
 #   Message1.msg
 #   Message2.msg
+# )
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -208,6 +209,7 @@ link_directories(${catkin_LIBRARY_DIRS})
 # catkin_add_nosetests(test)
 add_executable(imu_bridge
   src/imu_bridge.cpp
+
 )
 add_dependencies(imu_bridge ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(imu_bridge

@@ -20,7 +20,7 @@
 
 ---
 
-## pc2scan
+### pc2scan
 
 > `describe:` 根据点云的坐标确定其所属的 `ScanID` ，将其保存为 `sensor_msgs::LaserScan` 。
 > `usage:` `rosrun localization_0725 pc2scan <input.bag> <laser_topic> <output.bag>`

@@ -61,9 +61,9 @@ double g_angle_error;
 
 constexpr int LOOP_RATE = 50; // 50Hz
 
-void controlCmdCallBack(const geometry_msgs::TwistStampedConstPtr &msg)
+void controlCmdCallBack(const geometry_msgs::TwistConstPtr &msg)
 {
-  _current_velocity = msg->twist;
+  _current_velocity = *msg;
 }
 
 void getTransformFromTF(const std::string parent_frame, const std::string child_frame, tf::StampedTransform &transform)
@@ -196,7 +196,7 @@ int main(int argc, char **argv)
   g_velocity_publisher = nh.advertise<geometry_msgs::TwistStamped>("sim_velocity", 10);
 
   // subscribe topic
-  ros::Subscriber control_cmd_subscriber = nh.subscribe("ctrl_cmd", 10, controlCmdCallBack);
+  ros::Subscriber control_cmd_subscriber = nh.subscribe("/cmd_vel", 10, controlCmdCallBack);
   ros::Subscriber initialpose_subscriber;
 
   

@@ -329,7 +329,7 @@ bool TebLocalPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
     return false;
   }
   
-  ROS_INFO("check feasibility");       
+  //ROS_INFO("check feasibility");       
   // Check feasibility (but within the first few states only)
   if(cfg_.robot.is_footprint_dynamic)
   {
@@ -337,7 +337,7 @@ bool TebLocalPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
     footprint_spec_ = costmap_ros_->getRobotFootprint();
     costmap_2d::calculateMinAndMaxDistances(footprint_spec_, robot_inscribed_radius_, robot_circumscribed_radius);
   }
-  ROS_INFO("test6");
+  //ROS_INFO("test6");
   bool feasible = planner_->isTrajectoryFeasible(costmap_model_.get(), footprint_spec_, robot_inscribed_radius_, robot_circumscribed_radius, cfg_.trajectory.feasibility_check_no_poses);
   if (!feasible)
   {
@@ -355,7 +355,7 @@ bool TebLocalPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
     return false;
   }
 
-  ROS_INFO("get velocity command");
+  //ROS_INFO("get velocity command");
   // Get the velocity command for this sampling interval
   if (!planner_->getVelocityCommand(cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.angular.z))
   {
@@ -393,7 +393,7 @@ bool TebLocalPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
   
   // store last command (for recovery analysis etc.)
   last_cmd_ = cmd_vel;
-  ROS_INFO("%f", last_cmd_.linear.x);
+  //ROS_INFO("%f", last_cmd_.linear.x);
   
 // Now visualize everything    
   planner_->visualize();
@@ -839,8 +839,7 @@ void TebLocalPlannerROS::saturateVelocity(double& vx, double& vy, double& omega,
   
   // Limit angular velocity
   if (omega > max_vel_theta)
-    omega = max_vel_theta;
-  else if (omega < -max_vel_theta)
+
     omega = -max_vel_theta;
   
   // Limit backwards velocity

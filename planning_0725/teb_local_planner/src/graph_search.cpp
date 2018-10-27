@@ -46,12 +46,12 @@ void GraphSearchInterface::DepthFirst(HcGraph& g, std::vector<HcGraphVertexType>
                                       double goal_orientation, const geometry_msgs::Twist* start_velocity)
 {
   // see http://www.technical-recipes.com/2011/a-recursive-algorithm-to-find-all-paths-between-two-given-nodes/ for details on finding all simple paths
-
+  //ROS_INFO("start depth first");
   if ((int)hcp_->getTrajectoryContainer().size() >= cfg_->hcp.max_number_classes)
     return; // We do not need to search for further possible alternative homotopy classes.
 
   HcGraphVertexType back = visited.back();
-
+  //ROS_INFO("examine adjacent nodes");
   /// Examine adjacent nodes
   HcGraphAdjecencyIterator it, end;
   for ( boost::tie(it,end) = boost::adjacent_vertices(back,g); it!=end; ++it)
@@ -71,7 +71,7 @@ void GraphSearchInterface::DepthFirst(HcGraph& g, std::vector<HcGraphVertexType>
       break;
     }
   }
-
+  //ROS_INFO("recursion for vertices");
   /// Recursion for all adjacent vertices
   for ( boost::tie(it,end) = boost::adjacent_vertices(back,g); it!=end; ++it)
   {
@@ -218,6 +218,7 @@ void lrKeyPointGraph::createGraph(const PoseSE2& start, const PoseSE2& goal, dou
 
 void ProbRoadmapGraph::createGraph(const PoseSE2& start, const PoseSE2& goal, double dist_to_obst, double obstacle_heading_threshold, const geometry_msgs::Twist* start_velocity)
 {
+  ROS_INFO("createGraph");
   // Clear existing graph and paths
   clearGraph();
 
@@ -240,7 +241,7 @@ void ProbRoadmapGraph::createGraph(const PoseSE2& start, const PoseSE2& goal, do
 
   // Now sample vertices between start, goal and a specified width between both sides
   // Let's start with a square area between start and goal (maybe change it later to something like a circle or whatever)
-
+  //ROS_INFO("start sample vertices");
   double area_width = cfg_->hcp.roadmap_graph_area_width;
 
   boost::random::uniform_real_distribution<double> distribution_x(0, start_goal_dist * cfg_->hcp.roadmap_graph_area_length_scale);
@@ -260,7 +261,7 @@ void ProbRoadmapGraph::createGraph(const PoseSE2& start, const PoseSE2& goal, do
   graph_[start_vtx].pos = start.position();
   diff.normalize(); // normalize in place
 
-
+  //ROS_INFO("sampling");
   // Start sampling
   for (int i=0; i < cfg_->hcp.roadmap_graph_no_samples; ++i)
   {
@@ -295,7 +296,7 @@ void ProbRoadmapGraph::createGraph(const PoseSE2& start, const PoseSE2& goal, do
   HcGraphVertexType goal_vtx = boost::add_vertex(graph_); // goal vertex
   graph_[goal_vtx].pos = goal.position();
 
-
+  ROS_INFO("insert edge");
   // Insert Edges
   HcGraphVertexIterator it_i, end_i, it_j, end_j;
   for (boost::tie(it_i,end_i) = boost::vertices(graph_); it_i!=boost::prior(end_i); ++it_i) // ignore goal in this loop
@@ -330,7 +331,7 @@ void ProbRoadmapGraph::createGraph(const PoseSE2& start, const PoseSE2& goal, do
       boost::add_edge(*it_i,*it_j,graph_);
     }
   }
-
+  ROS_INFO("find all paths");
   /// Find all paths between start and goal!
   std::vector<HcGraphVertexType> visited;
   visited.push_back(start_vtx);

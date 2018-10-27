@@ -34,7 +34,7 @@ void CB_reconfigure(TebLocalPlannerReconfigureConfig& reconfig, uint32_t level);
 void GoalCB(const geometry_msgs::PoseStamped::ConstPtr& msg);
 //void GlobalPlanCB(const geometry_msgs::PolygonStamped& msg);
 void GlobalPlanCB(const nav_msgs::Path& msg);
-void LocalPlanCB(const ros::TimerEvent& e);
+//void LocalPlanCB(const ros::TimerEvent& e);
 //void LocalCostMapCB(const nav_msgs::OccupancyGrid& msg);
 void publishZero();
 void resetState();
@@ -45,7 +45,7 @@ int main(int argc, char** argv)
     ros::NodeHandle n("~");
     tf_ = new tf::TransformListener(ros::Duration(10));
     config.loadRosParamFromNodeHandle(n);
-    ros::Timer planner_timer = n.createTimer(ros::Duration(1),LocalPlanCB);
+    //ros::Timer planner_timer = n.createTimer(ros::Duration(1),LocalPlanCB);
     
     dynamic_recfg = boost::make_shared< dynamic_reconfigure::Server<TebLocalPlannerReconfigureConfig> >(n);
     dynamic_reconfigure::Server<TebLocalPlannerReconfigureConfig>::CallbackType cb = boost::bind(CB_reconfigure, _1, _2);
@@ -114,19 +114,49 @@ void GlobalPlanCB(const nav_msgs::Path& msg){
             plan_point.pose = msg.poses[i].pose;
             plan_point.header = msg.header;
             plan_point.header.seq = i+1;
-            //plan_point.header.stamp = ros::Time::now();
             plan_point.header.frame_id="map";
-            //ROS_INFO("%d, %s",plan_point.header.seq, asctime(gmtime(plan_point.header.stamp)));
             global_plan->push_back(plan_point);
-            //ROS_INFO("global%f, %f", msg.poses[i].pose.position.x, msg.poses[i].pose.position.y);
         }
         new_goal=false;
-        //*global_plan = msg.poses;
-        //ROS_INFO("%f", msg.poses[0].pose.position.x);
         new_global_plan = true;
         trajectory = true;
+        if(!goal_reached){
+            geometry_msgs::Twist cmd_vel;
+            if(new_global_plan){
+                ROS_INFO("new_global_plan");
+                new_global_plan = false;
+                if(!teb_local.setPlan(*global_plan)){
+                    ROS_ERROR("setPlan Error");
+                    resetState();
+                    return;
+                }
+            }
+            while(trajectory){
+                ROS_INFO("trajectory start");
+                if(teb_local.isGoalReached()){
+                    ROS_DEBUG_NAMED("move_base","Goal reached!");
+                    goal_reached = true;
+                    //trajectory = false;
+                    resetState();
+                }
+            //ROS_INFO("AAAAAAAAAA");
+                if(teb_local.computeVelocityCommands(cmd_vel)){//compute中实现了可视化，publish planner,global_planner_
+                //ROS_INFO("BBBB");
+                    ROS_INFO("%f", cmd_vel.linear.x);
+                    ROS_DEBUG_NAMED( "move_base", "Got a valid command from the local planner: %.3lf, %.3lf, %.3lf",
+                                    cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.angular.z );
+                    vel_pub_.publish(cmd_vel);
+                }else{
+                    ROS_DEBUG_NAMED("move_base", "The local planner could not find a valid plan.");
+                }
+            //ROS_INFO("BBBBBBBBBBB");
+            }
+        }
+
     }
 }
+
+/**
 void LocalPlanCB(const ros::TimerEvent& e){
     if(!goal_reached){
         geometry_msgs::Twist cmd_vel;
@@ -165,7 +195,7 @@ void LocalPlanCB(const ros::TimerEvent& e){
         }
     }
 }
-
+*/
 
 void CB_reconfigure(TebLocalPlannerReconfigureConfig& reconfig, uint32_t level)
 {

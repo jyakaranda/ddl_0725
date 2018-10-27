@@ -348,13 +348,14 @@ void EthernetDriver::cmdCB(const geometry_msgs::TwistConstPtr &msg)
 	}
 	static PacketData packet_pub;
 	packet_pub.type = VAL_VEL;
+	packet_pub.syn = 0xFA;
 	packet_pub.dat.vel.liner[0] = param_pwm2rpm[idx].x;
 	packet_pub.dat.vel.liner[1] = msg->linear.y;
 	packet_pub.dat.vel.liner[2] = msg->linear.z;
 	packet_pub.dat.vel.angular[0] = msg->angular.x;
 	packet_pub.dat.vel.angular[1] = msg->angular.y;
 	packet_pub.dat.vel.angular[2] = pwm2;
-	packet_pub.syn_CR = 0xFA;
+	packet_pub.syn_CR = 100;
 	packet_pub.syn_LF = '\n';
 
 	ROS_INFO("send packet to mcu, linear.x: %.4f ; angular.z: %.4f \n rpm: %.1f ; angle: %.1f", msg->linear.x, angle, packet_pub.dat.vel.liner[0], packet_pub.dat.vel.angular[2]);

@@ -10,8 +10,11 @@
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <visualization_msgs/Marker.h>
 
 #include <iostream>
+#include <string>
+#include <sstream>
 #include <pcl/point_types.h>
 #include <pcl/registration/ndt.h>
 #include <pcl/filters/approximate_voxel_grid.h>
@@ -20,7 +23,17 @@
 #include <pthread.h>
 #include <chrono>
 
+#include <ndt_gpu/NormalDistributionsTransform.h>
+#include <pcl_omp_registration/ndt.h>
+#ifndef USE_OMP
+#define USE_OMP
+#endif
+
 #include "user_protocol.h"
+
+#define METHOD_PCL 0
+#define METHOD_CUDA 1
+#define METHOD_OMP 2
 
 typedef pcl::PointXYZ PointT;
 typedef pcl::PointCloud<PointT> PointCloudT;
@@ -49,6 +62,10 @@ private:
 
   ros::Publisher pub_current_pose_;
   geometry_msgs::PoseStamped msg_current_pose_;
+  ros::Publisher pub_loc_conf_;
+  visualization_msgs::Marker msg_loc_conf_;
+  ros::Publisher pub_trans_prob_;
+  visualization_msgs::Marker msg_trans_prob_;
 
   ros::Subscriber sub_odom_;
   nav_msgs::Odometry::ConstPtr msg_odom_; // under odom frame
@@ -72,12 +89,20 @@ private:
   pose offset_imu_;
   ros::Time pre_imu_time_;
   Eigen::Matrix4f tf_btol_;
+  tf::Transform current_map2odom_;
 
   bool pose_init_;
   bool odom_init_;
   bool map_init_;
   int model_pc_num_;
   pthread_mutex_t mutex;
+
+#ifdef CUDA_FOUND
+  std::shared_ptr<gpu::GNormalDistributionsTransform> anh_gpu_ndt_ptr;
+#endif
+#ifdef USE_OMP
+  pcl_omp::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ> omp_ndt_;
+#endif
 
   pcl::NormalDistributionsTransform<PointT, PointT> ndt_;
   bool has_converged_;
@@ -99,6 +124,13 @@ private:
   int param_ndt_max_iterations_;
   double param_ndt_step_size_;
   double param_ndt_epsilon_;
+  int param_method_type_;
+
+  // debug use
+  bool param_debug_;
+  bool rawodom_init_;
+  ros::Publisher pub_rawodom_;
+  nav_msgs::Odometry msg_rawodom_;
 
   /**
    * @brief Save motion data to get a rough pose estimation to give NDT-matching a initial transformation matrix.

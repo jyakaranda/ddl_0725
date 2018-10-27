@@ -8,12 +8,18 @@
 
 #include "ndt_localization/ndt_localization.h"
 
+NDTLocalization::~NDTLocalization()
+{
+}
+
 bool NDTLocalization::init()
 {
   ROS_INFO("Start init NDTLocalization");
+  ros::Duration(1.0).sleep();
 
   pose_init_ = false;
   odom_init_ = false;
+  pthread_mutex_init(&mutex, NULL);
 
   pnh_.param<std::string>("map_frame", param_map_frame_, std::string("/map"));
   pnh_.param<std::string>("odom_frame", param_odom_frame_, std::string("/odom"));
@@ -27,15 +33,25 @@ bool NDTLocalization::init()
   pnh_.param<int>("ndt_max_iterations", param_ndt_max_iterations_, 25);
   pnh_.param<double>("ndt_step_size", param_ndt_step_size_, 0.1);
   pnh_.param<double>("ndt_epsilon", param_ndt_epsilon_, 0.01);
+  pnh_.param<int>("method_type", param_method_type_, 0);
+  pnh_.param<bool>("debug", param_debug_, false);
 
   sub_initial_pose_ = nh_.subscribe<geometry_msgs::PoseWithCovarianceStamped>("/initialpose", 1, boost::bind(&NDTLocalization::initialPoseCB, this, _1));
   sub_map_ = nh_.subscribe<sensor_msgs::PointCloud2>("/map/point_cloud", 1, boost::bind(&NDTLocalization::mapCB, this, _1));
   sub_odom_ = nh_.subscribe<nav_msgs::Odometry>("/odom/imu", 500, boost::bind(&NDTLocalization::odomCB, this, _1));
+  sub_point_cloud_ = nh_.subscribe<sensor_msgs::PointCloud2>("/lslidar_point_cloud", 20, boost::bind(&NDTLocalization::pointCloudCB, this, _1));
+  pub_current_pose_ = nh_.advertise<geometry_msgs::PoseStamped>("/ndt/current_pose", 100);
+  pub_loc_conf_ = nh_.advertise<visualization_msgs::Marker>("/ndt/loc_conf", 1);
+  pub_trans_prob_ = nh_.advertise<visualization_msgs::Marker>("/ndt/trans_prob", 1);
+  msg_loc_conf_.header.frame_id = param_map_frame_;
+  msg_trans_prob_.header.frame_id = param_map_frame_;
 
   tf::StampedTransform transform;
   try
   {
-    tf_listener_.waitForTransform(param_base_frame_, param_laser_frame_, ros::Time(0), ros::Duration(param_tf_timeout_), ros::Duration(param_tf_timeout_ / 3));
+    ros::Time now = ros::Time::now();
+    ROS_INFO("now: %f", now.toSec());
+    tf_listener_.waitForTransform(param_base_frame_, param_laser_frame_, ros::Time(0), ros::Duration(param_tf_timeout_ * 10), ros::Duration(param_tf_timeout_ / 3));
     tf_listener_.lookupTransform(param_base_frame_, param_laser_frame_, ros::Time(0), transform);
   }
   catch (const tf::TransformException &ex)
@@ -50,6 +66,24 @@ bool NDTLocalization::init()
   Eigen::AngleAxisf rot_y_btol(pitch, Eigen::Vector3f::UnitY());
   Eigen::AngleAxisf rot_z_btol(yaw, Eigen::Vector3f::UnitZ());
   tf_btol_ = (tl_btol * rot_z_btol * rot_y_btol * rot_x_btol).matrix();
+  current_map2odom_ = tf::Transform(tf::Quaternion(0., 0., 0.), tf::Vector3(0., 0., 0.));
+
+  if (param_method_type_ == METHOD_CUDA)
+  {
+#ifdef CUDA_FOUND
+    ROS_INFO("init gpu ndt.");
+    anh_gpu_ndt_ptr =
+        std::make_shared<gpu::GNormalDistributionsTransform>();
+#else
+    ROS_ERROR("param method_type set to cuda, but cuda_found not defined!");
+#endif
+  }
+
+  if (param_debug_)
+  {
+    pub_rawodom_ = nh_.advertise<nav_msgs::Odometry>("/map/odom", 10);
+    msg_rawodom_.header.frame_id = param_map_frame_;
+  }
 
   ROS_INFO("End init NDTLocalization");
   return true;
@@ -59,7 +93,7 @@ void NDTLocalization::initialPoseCB(const geometry_msgs::PoseWithCovarianceStamp
 {
   if (msg->header.frame_id != param_map_frame_)
   {
-    ROS_WARN("Please initialize pose under %s frame.", param_map_frame_);
+    ROS_WARN("Please initialize pose under %s frame.", param_map_frame_.c_str());
     pose_init_ = false;
     return;
   }
@@ -70,6 +104,10 @@ void NDTLocalization::initialPoseCB(const geometry_msgs::PoseWithCovarianceStamp
 
   offset_odom_.reset();
   offset_imu_.reset();
+  if (param_debug_)
+  {
+    rawodom_init_ = false;
+  }
 
   ROS_INFO("Current pose initialized.");
 }
@@ -91,12 +129,54 @@ void NDTLocalization::mapCB(const sensor_msgs::PointCloud2::ConstPtr &msg)
   pcl::fromROSMsg(*msg, model_pc_);
   PointCloudT::Ptr map_ptr(new PointCloudT(model_pc_));
 
+  // set NDT target
   pthread_mutex_lock(&mutex);
-  ndt_.setResolution(param_ndt_resolution_);
-  ndt_.setInputTarget(map_ptr);
-  ndt_.setMaximumIterations(param_ndt_max_iterations_);
-  ndt_.setStepSize(param_ndt_step_size_);
-  ndt_.setTransformationEpsilon(param_ndt_epsilon_);
+  if (param_method_type_ == METHOD_CUDA)
+  {
+#ifdef CUDA_FOUND
+    anh_gpu_ndt_ptr->setResolution(param_ndt_resolution_);
+    anh_gpu_ndt_ptr->setInputTarget(map_ptr);
+    anh_gpu_ndt_ptr->setMaximumIterations(param_ndt_max_iterations_);
+    anh_gpu_ndt_ptr->setStepSize(param_ndt_step_size_);
+    anh_gpu_ndt_ptr->setTransformationEpsilon(param_ndt_epsilon_);
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr dummy_scan_ptr(new pcl::PointCloud<pcl::PointXYZ>());
+    pcl::PointXYZ dummy_point;
+    dummy_scan_ptr->push_back(dummy_point);
+    anh_gpu_ndt_ptr->setInputSource(dummy_scan_ptr);
+
+    anh_gpu_ndt_ptr->align(Eigen::Matrix4f::Identity());
+
+#else
+    ROS_ERROR("param method_type set to cuda, but cuda_found not defined!");
+#endif
+  }
+  else if (param_method_type_ == METHOD_OMP)
+  {
+#ifdef USE_OMP
+    PointCloudT::Ptr output_cloud(new PointCloudT());
+    omp_ndt_.setResolution(param_ndt_resolution_);
+    omp_ndt_.setInputTarget(map_ptr);
+    omp_ndt_.setMaximumIterations(param_ndt_max_iterations_);
+    omp_ndt_.setStepSize(param_ndt_step_size_);
+    omp_ndt_.setTransformationEpsilon(param_ndt_epsilon_);
+    omp_ndt_.align(*output_cloud, Eigen::Matrix4f::Identity());
+#else
+    ROS_ERROR("param method_type set to omp, but use_omp not defined!");
+#endif
+  }
+  else
+  {
+    PointCloudT::Ptr output_cloud(new PointCloudT());
+    ndt_.setResolution(param_ndt_resolution_);
+    ndt_.setInputTarget(map_ptr);
+    ndt_.setMaximumIterations(param_ndt_max_iterations_);
+    ndt_.setStepSize(param_ndt_step_size_);
+    ndt_.setTransformationEpsilon(param_ndt_epsilon_);
+    ndt_.align(*output_cloud, Eigen::Matrix4f::Identity());
+  }
+
+  map_init_ = true;
   pthread_mutex_unlock(&mutex);
   ROS_INFO("Update model pc with %d points.", model_pc_num_);
 }
@@ -113,22 +193,43 @@ void NDTLocalization::odomCB(const nav_msgs::Odometry::ConstPtr &msg)
   double diff_time = (msg->header.stamp - pre_odom_time_).toSec();
   if (diff_time > param_odom_timeout_)
   {
-    ROS_WARN("Long time waiting for odom msg, ignore this msg.");
+    ROS_WARN("Long time(%f s) waiting for odom msg, ignore this msg.", diff_time);
     pre_odom_time_ = msg->header.stamp;
     return;
   }
 
   msg_odom_ = msg;
-  offset_odom_.roll += msg->twist.twist.angular.x * diff_time;
-  offset_odom_.pitch += msg->twist.twist.angular.y * diff_time;
+  // offset_odom_.roll += msg->twist.twist.angular.x * diff_time;
+  // offset_odom_.pitch += msg->twist.twist.angular.y * diff_time;
   offset_odom_.yaw += msg->twist.twist.angular.z * diff_time;
   double diff_x = msg->twist.twist.linear.x * diff_time;
-  offset_odom_.x += std::cos(-current_pose_.pitch) * std::cos(current_pose_.yaw) * diff_x;
-  offset_odom_.y += std::cos(-current_pose_.pitch) * std::sin(current_pose_.yaw) * diff_x;
-  offset_odom_.z += std::sin(-current_pose_.pitch) * diff_x;
-  current_pose_odom_ = pre_pose_odom_ + offset_odom_;
+  offset_odom_.x += std::cos(-predict_pose_odom_.pitch) * std::cos(predict_pose_odom_.yaw) * diff_x;
+  offset_odom_.y += std::cos(-predict_pose_odom_.pitch) * std::sin(predict_pose_odom_.yaw) * diff_x;
+  offset_odom_.z += std::sin(-predict_pose_odom_.pitch) * diff_x;
+  // current_pose_odom_ += offset_odom_;  // error
   predict_pose_odom_ = pre_pose_ + offset_odom_;
-  pre_pose_odom_ = current_pose_odom_;
+  // pre_pose_odom_ = current_pose_odom_;
+  // ROS_INFO("offset_odom.y: %.2f, %f", offset_odom_.y, ros::Time::now().toSec());
+  // ROS_INFO("Current odom pose: (%.2f, %.2f, %.2f; %.2f, %.2f, %.2f)", current_pose_odom_.x, current_pose_odom_.y, current_pose_odom_.z, current_pose_odom_.roll, current_pose_odom_.pitch, current_pose_odom_.yaw);
+  pre_odom_time_ = msg->header.stamp;
+
+  tf_broadcaster_.sendTransform(tf::StampedTransform(current_map2odom_, msg->header.stamp, param_map_frame_, param_odom_frame_));
+
+  if (param_debug_ && rawodom_init_)
+  {
+    msg_rawodom_.header.stamp = msg->header.stamp;
+    tf::Quaternion tmp_q;
+    tf::quaternionMsgToTF(msg_rawodom_.pose.pose.orientation, tmp_q);
+    double roll, pitch, yaw;
+    tf::Matrix3x3(tf::Quaternion(tmp_q)).getEulerYPR(yaw, pitch, roll);
+    msg_rawodom_.pose.pose.position.x += std::cos(-pitch) * std::cos(yaw) * diff_x;
+    msg_rawodom_.pose.pose.position.y += std::cos(-pitch) * std::sin(yaw) * diff_x;
+    msg_rawodom_.pose.pose.position.z += std::sin(-pitch) * diff_x;
+    yaw += msg->twist.twist.angular.z * diff_time;
+    tmp_q.setRPY(roll, pitch, yaw);
+    tf::quaternionTFToMsg(tmp_q, msg_rawodom_.pose.pose.orientation);
+    pub_rawodom_.publish(msg_rawodom_);
+  }
 }
 
 /** 
@@ -160,7 +261,7 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg
   // TODO predict_ndt_pose
   if (param_use_odom_)
   {
-    predict_ndt_pose = pre_pose_odom_;
+    predict_ndt_pose = predict_pose_odom_;
   }
 
   Eigen::Translation3f init_translation(predict_ndt_pose.x, predict_ndt_pose.y, predict_ndt_pose.z);
@@ -169,25 +270,84 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg
   Eigen::AngleAxisf init_rotation_z(predict_ndt_pose.yaw, Eigen::Vector3f::UnitZ());
   init_guess = (init_translation * init_rotation_z * init_rotation_y * init_rotation_x) * tf_btol_;
 
-  std::chrono::time_point<std::chrono::system_clock> align_start, align_end, getFitnessScore_start, getFitnessScore_end;
+  ros::Time align_start, align_end, getFitnessScore_start, getFitnessScore_end;
 
   pthread_mutex_lock(&mutex);
-  ndt_.setInputSource(scan_ptr);
+  if (param_method_type_ == METHOD_CUDA)
+  {
+#ifdef CUDA_FOUND
+    anh_gpu_ndt_ptr->setInputSource(scan_ptr);
+    if (param_debug_)
+    {
+      ROS_INFO("Start align cuda");
+    }
+    align_start = ros::Time::now();
+    anh_gpu_ndt_ptr->align(init_guess);
+    align_end = ros::Time::now();
 
-  align_start = std::chrono::system_clock::now();
-  ndt_.align(*output_cloud, init_guess);
-  align_end = std::chrono::system_clock::now();
+    final_tf = anh_gpu_ndt_ptr->getFinalTransformation();
+    has_converged_ = anh_gpu_ndt_ptr->hasConverged();
+    iteration_ = anh_gpu_ndt_ptr->getFinalNumIteration();
+    trans_probability_ = anh_gpu_ndt_ptr->getTransformationProbability();
 
-  final_tf = ndt_.getFinalTransformation();
-  has_converged_ = ndt_.hasConverged();
-  iteration_ = ndt_.getFinalNumIteration();
-  trans_probability_ = ndt_.getTransformationProbability();
+    getFitnessScore_start = ros::Time::now();
+    fitness_score_ = anh_gpu_ndt_ptr->getFitnessScore();
+    getFitnessScore_end = ros::Time::now();
+#else
+    ROS_ERROR("param method_type set true, but cuda not found!");
+#endif
+  }
+  else if (param_method_type_ == METHOD_OMP)
+  {
+#ifdef USE_OMP
+    if (param_debug_)
+    {
+      ROS_INFO("Start align omp");
+    }
+    omp_ndt_.setInputSource(scan_ptr);
 
-  getFitnessScore_start = std::chrono::system_clock::now();
-  fitness_score_ = ndt_.getFitnessScore();
-  getFitnessScore_end = std::chrono::system_clock::now();
+    align_start = ros::Time::now();
+    omp_ndt_.align(*output_cloud, init_guess);
+    align_end = ros::Time::now();
 
-  ROS_INFO("NDT has converged: %d, iterations: %d, fitness_score: %f, trans_probability: %f", has_converged_, iteration_, fitness_score_, trans_probability_);
+    final_tf = omp_ndt_.getFinalTransformation();
+    has_converged_ = omp_ndt_.hasConverged();
+    iteration_ = omp_ndt_.getFinalNumIteration();
+    trans_probability_ = omp_ndt_.getTransformationProbability();
+
+    getFitnessScore_start = ros::Time::now();
+    fitness_score_ = omp_ndt_.getFitnessScore();
+    getFitnessScore_end = ros::Time::now();
+#else
+    ROS_ERROR("param method_type set to omp, but use_omp not defined!");
+#endif
+  }
+  else
+  {
+    ndt_.setInputSource(scan_ptr);
+
+    if (param_debug_)
+    {
+      ROS_INFO("Start align pcl");
+    }
+    align_start = ros::Time::now();
+    ndt_.align(*output_cloud, init_guess);
+    align_end = ros::Time::now();
+
+    final_tf = ndt_.getFinalTransformation();
+    has_converged_ = ndt_.hasConverged();
+    iteration_ = ndt_.getFinalNumIteration();
+    trans_probability_ = ndt_.getTransformationProbability();
+
+    getFitnessScore_start = ros::Time::now();
+    fitness_score_ = ndt_.getFitnessScore();
+    getFitnessScore_end = ros::Time::now();
+  }
+
+  if (param_debug_)
+  {
+    ROS_INFO("NDT has converged(time: %.2f): %d, iterations: %d, fitness_score(time: %.2f): %f, trans_probability: %f", (align_end - align_start).toSec(), has_converged_, iteration_, (getFitnessScore_end - getFitnessScore_start).toSec(), fitness_score_, trans_probability_);
+  }
 
   pthread_mutex_unlock(&mutex);
 
@@ -215,13 +375,20 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg
     use_predict_pose = true;
   }
 
-  if (use_predict_pose)
+  // use_predict_pose = false;
+
+  if (!use_predict_pose)
   {
     current_pose_ = ndt_pose;
+    if (param_debug_)
+    {
+      ROS_INFO("Use ndt predict pose: (%.2f, %.2f, %.2f; %.2f, %.2f, %.2f)", current_pose_.x, current_pose_.y, current_pose_.z, current_pose_.roll, current_pose_.pitch, current_pose_.yaw);
+    }
   }
   else
   {
     current_pose_ = predict_ndt_pose;
+    ROS_WARN("Use odom predict pose: (%.2f, %.2f, %.2f; %.2f, %.2f, %.2f)", current_pose_.x, current_pose_.y, current_pose_.z, current_pose_.roll, current_pose_.pitch, current_pose_.yaw);
   }
 
   pose2GeometryPose(msg_current_pose_.pose, current_pose_);
@@ -229,19 +396,67 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg
   msg_current_pose_.header.frame_id = param_map_frame_;
   pub_current_pose_.publish(msg_current_pose_);
 
-  // // publish map->odom using map->laser and odom->laser
-  // tf::StampedTransform transform1;
-  // try
-  // {
-  //   tf_listener_.waitForTransform(param_odom_frame_, param_laser_frame_, ros::Time(0), ros::Duration(param_tf_timeout_), ros::Duration(param_tf_timeout_ / 3));
-  //   tf_listener_.lookupTransform(param_odom_frame_, param_laser_frame_, ros::Time(0), transform1);
-  // }
-  // catch (const tf::TransformException &ex)
-  // {
-  //   ROS_ERROR("Error waiting for tf in pointCloudCB: %s", ex.what());
-  //   // TODO do some stuff
-  //   return;
-  // }
-  // tf::Transform transform2(tf::Quaternion(1, 2, 3, 4), tf::Vector3(1, 2, 3));
-  // tf_broadcaster_.sendTransform(tf::StampedTransform(transform2 * transform1.inverse(), msg->header.stamp, param_map_frame_, param_odom_frame_));
+  // publish map->odom using map->base and odom->base
+  tf::StampedTransform transform1;
+  try
+  {
+    tf_listener_.waitForTransform(param_odom_frame_, param_base_frame_, ros::Time(0), ros::Duration(param_tf_timeout_), ros::Duration(param_tf_timeout_ / 3));
+    tf_listener_.lookupTransform(param_odom_frame_, param_base_frame_, ros::Time(0), transform1);
+  }
+  catch (const tf::TransformException &ex)
+  {
+    ROS_ERROR("Error waiting for tf in pointCloudCB: %s", ex.what());
+    // TODO do some stuff
+    return;
+  }
+  tf::Quaternion tmp_q;
+  tmp_q.setRPY(current_pose_.roll, current_pose_.pitch, current_pose_.yaw);
+  tf::Transform transform2(tmp_q, tf::Vector3(current_pose_.x, current_pose_.y, current_pose_.z));
+  current_map2odom_ = transform2 * transform1.inverse();
+  // tf_broadcaster_.sendTransform(tf::StampedTransform(current_map2odom_, msg->header.stamp, param_map_frame_, param_odom_frame_));
+
+  if (param_debug_ && !rawodom_init_ && !use_predict_pose)
+  {
+    rawodom_init_ = true;
+    tf::poseTFToMsg(transform2, msg_rawodom_.pose.pose);
+  }
+
+  msg_loc_conf_.header.stamp = msg->header.stamp;
+  msg_loc_conf_.ns = "ndt";
+  msg_loc_conf_.id = 0;
+  msg_loc_conf_.type = visualization_msgs::Marker::SPHERE;
+  msg_loc_conf_.action = visualization_msgs::Marker::ADD;
+  msg_loc_conf_.pose.position = msg_current_pose_.pose.position;
+  std_msgs::ColorRGBA green;
+  green.a = 1.0;
+  green.b = 0.0;
+  green.r = 0.0;
+  green.g = 1.0;
+  msg_loc_conf_.color = green;
+  msg_loc_conf_.scale.x = 6.0 / (trans_probability_ + 0.1);
+  msg_loc_conf_.scale.y = 6.0 / (trans_probability_ + 0.1);
+  msg_loc_conf_.scale.z = 6.0 / (trans_probability_ + 0.1);
+  msg_loc_conf_.frame_locked = true;
+  pub_loc_conf_.publish(msg_loc_conf_);
+
+  msg_trans_prob_.header.stamp = msg->header.stamp;
+  msg_trans_prob_.ns = "ndt";
+  msg_trans_prob_.id = 0;
+  msg_trans_prob_.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+  msg_trans_prob_.action = visualization_msgs::Marker::ADD;
+  msg_trans_prob_.pose.position.y = -10.;
+  msg_trans_prob_.color = green;
+  msg_trans_prob_.scale.x = 0.;
+  msg_trans_prob_.scale.y = 0.;
+  msg_trans_prob_.scale.z = 1.;
+  msg_trans_prob_.frame_locked = true;
+  std::stringstream ss;
+  ss << "transform probability: " << trans_probability_;
+  msg_trans_prob_.text = ss.str();
+  pub_trans_prob_.publish(msg_trans_prob_);
+
+  offset_odom_.reset();
+  // current_pose_odom_ = current_pose_;
+  // pre_pose_odom_ = current_pose_;
+  pre_pose_ = current_pose_;
 }

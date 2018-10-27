@@ -1,0 +1,17 @@
+map_frame: "map"
+odom_frame: "/odom"
+base_frame: "/base_link"
+laser_frame: "/laser"
+
+tf_timeout: 1.0 # waiting for available tf
+odom_timeout: 1.5 # waiting for next odom msg, too long means large uncertainty
+use_odom: true
+predict_error_thresh: 1
+
+ndt_resolution: 1.0
+ndt_max_iterations: 25
+ndt_step_size: 0.1
+ndt_epsilon: 0.01
+method_type: 1
+
+debug: true

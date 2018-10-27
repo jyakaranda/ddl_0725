@@ -31,7 +31,8 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "hall_sensor");
   int gpio_number;
   ros::NodeHandle n;
-  n.param("gpio_number", gpio_number, 254);
+  ros::NodeHandle pn("~");
+  pn.param("gpio_number", gpio_number, 296);
   GPIO hall_sensor(gpio_number);
   hall_sensor.edge(GPIO::EDGE_BOTH);
   ros::Publisher hall_sensor_pub = n.advertise<std_msgs::Bool>("hall_sensor", 10);

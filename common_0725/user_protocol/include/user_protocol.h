@@ -39,7 +39,7 @@ struct pose
   }
 };
 
-bool geometryPose2Pose(const geometry_msgs::Pose from, pose &to)
+bool geometryPose2Pose(const geometry_msgs::Pose &from, pose &to)
 {
   to.x = from.position.x;
   to.y = from.position.y;
@@ -50,7 +50,7 @@ bool geometryPose2Pose(const geometry_msgs::Pose from, pose &to)
   return true;
 }
 
-bool pose2GeometryPose(geometry_msgs::Pose to, const pose from)
+bool pose2GeometryPose(geometry_msgs::Pose &to, const pose &from)
 {
   to.position.x = from.x;
   to.position.y = from.y;

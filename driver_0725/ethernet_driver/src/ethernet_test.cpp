@@ -4,7 +4,7 @@
 #include <netinet/in.h>
 #include <stdio.h>
 #include <string.h>
-#include "ethernet_driver/user_protocol.h"
+#include <ethernet_driver/user_protocol.h>
 
 #define SERVER_PORT 8888
 #define SERVER_IP "192.168.198.238"
@@ -43,9 +43,9 @@ void udp_msg_sender(int sock_fd, const struct sockaddr *dst)
 int main(int argc, char **argv)
 {
 
-	ros::init(argc, argv, "ethernet_driver");
+	ros::init(argc, argv, "ethernet_test");
 	ros::NodeHandle n;
-	ROS_INFO("ethernet_driver");
+	ROS_INFO("ethernet_test");
 	int client_fd;
 	struct sockaddr_in ser_addr;
 	client_fd = socket(AF_INET, SOCK_DGRAM, 0);

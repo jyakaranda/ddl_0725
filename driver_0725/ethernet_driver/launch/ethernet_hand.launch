@@ -1,0 +1,10 @@
+<launch>
+    <node pkg="ethernet_driver" type="ethernet_node" name="ethernet_node" output="screen">
+        <rosparam file="$(find ethernet_driver)/params/ethernet_hand.yaml" command="load" />
+        <param name="device_ip" type="string" value="192.168.1.102" />
+        <param name="device_port" type="int" value="8888" />
+        <param name="mcu_ip" type="string" value="192.168.1.101" />
+        <param name="mcu_port" type="int" value="8887" />
+        <param name="debug" type="bool" value="true" />
+    </node>
+</launch>

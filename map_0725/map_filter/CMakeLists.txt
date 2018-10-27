@@ -164,6 +164,15 @@ target_link_libraries(filter_node
   ${catkin_LIBRARIES}
 )
 
+add_executable(rt_filter_node
+  src/rt_filter_node.cpp
+)
+
+target_link_libraries(rt_filter_node
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
+)
+
 #############
 ## Install ##
 #############

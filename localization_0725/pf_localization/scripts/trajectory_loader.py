@@ -5,6 +5,7 @@ from geometry_msgs.msg import PolygonStamped
 from nav_msgs.msg import Path
 import time, os
 from utils import LineTrajectory
+from pf_localization.srv import *
 
 
 class LoadTrajectory(object):
@@ -15,7 +16,7 @@ class LoadTrajectory(object):
         self.path = rospy.get_param(
             "~trajectory",
             default=
-            "/home/lenovo/zh/workspace/catkin_ws/src/ddl_0725/localization_0725/trajectories/2018-08-09-16-16-58.traj"
+            "/home/nvidia/workspace/catkin_ws/src/ddl_0725/pf_localization/trajectories/2018-08-09-16-16-58.traj"
         )
         self.should_publish = bool(rospy.get_param("~publish", default=True))
         self.pub_topic = rospy.get_param(
@@ -35,6 +36,8 @@ class LoadTrajectory(object):
         self.trajectory.publish_viz(duration=3.0)
         self.duration = rospy.Duration(1)
 
+        self.srv_get_raw_path_ = rospy.Service('/get_raw_path', GetRawPath,
+                                               self.handle_get_raw_path)
         # send the trajectory
         if self.should_publish:
             self.publish_trajectory()
@@ -44,6 +47,12 @@ class LoadTrajectory(object):
         while not rospy.is_shutdown():
             self.traj_pub.publish(self.trajectory.toPath())
             time.sleep(self.duration.to_sec())
+
+    def handle_get_raw_path(self, req):
+        if not isinstance(self.trajectory, LineTrajectory):
+            self.trajectory = LineTrajectory("/loaded_trajectory")
+            self.trajectory.laod(self.path)
+        return GetRawPathResponse(self.trajectory.toPath())
 
 
 if __name__ == "__main__":

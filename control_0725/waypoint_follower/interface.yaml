@@ -1,0 +1,5 @@
+- name: /pure_pursuit
+  publish: [/twist_raw, /ctrl_cmd, /next_waypoint_mark, /next_target_mark,
+    /search_circle_mark, /line_point_mark, /trajectory_circle_mark]
+  subscribe: [/final_waypoints, /current_pose, /config/waypoint_follower,
+    /current_velocity]

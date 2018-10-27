@@ -3,10 +3,10 @@
   
   <arg name="angle_error" default="0.0"/>
   <arg name="position_error" default="0.0"/>
-  <node pkg="waypoint_follower" type="wf_simulator" name="wf_simulator" output="screen">
+  <node pkg="wf_simulator" type="wf_simulator" name="wf_simulator" output="screen">
     <param name="angle_error" value="$(arg angle_error)"/>
     <param name="position_error" value="$(arg position_error)"/>
   </node>
-  <node pkg="waypoint_follower" type="pub_path" name="pub_path" output="screen"/>
+
 
 </launch>

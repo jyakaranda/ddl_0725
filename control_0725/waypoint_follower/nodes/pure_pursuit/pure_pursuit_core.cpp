@@ -63,6 +63,7 @@ void PurePursuitNode::initForROS()
 
   // setup publisher
   pub1_ = nh_.advertise<geometry_msgs::TwistStamped>("ctrl_cmd", 10); //发布机器人运动信息
+  pub3_ = nh_.advertise<geometry_msgs::Pose>("/cur_pose", 10); //发布机器人当前姿态
   pub11_ = nh_.advertise<visualization_msgs::Marker>("next_waypoint_mark", 0);
   pub12_ = nh_.advertise<visualization_msgs::Marker>("next_target_mark", 0);
   pub13_ = nh_.advertise<visualization_msgs::Marker>("search_circle_mark", 0);
@@ -71,7 +72,6 @@ void PurePursuitNode::initForROS()
   pub16_ = nh_.advertise<std_msgs::Float32>("angular_gravity", 0);
   pub17_ = nh_.advertise<std_msgs::Float32>("deviation_of_current_position", 0);
   // pub7_ = nh.advertise<std_msgs::Bool>("wf_stat", 0);
-  pub3_ = nh_.advertise<geometry_msgs::Pose>("/cur_pose", 10); //发布机器人当前姿态
 }
 
 void PurePursuitNode::run()

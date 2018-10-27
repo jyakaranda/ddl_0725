@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(waypoint_follower)
+project(wf_simulator)
 
 find_package(catkin REQUIRED COMPONENTS
-        roscpp
+        roscpp      
         std_msgs
         sensor_msgs
         nav_msgs
@@ -26,7 +26,8 @@ catkin_package(
         geometry_msgs
         nav_msgs
         std_msgs
-        sensor_msgs  
+        sensor_msgs
+        
 )
 
 ###########
@@ -46,25 +47,11 @@ add_dependencies(libwaypoint_follower
         )
 target_link_libraries(libwaypoint_follower ${catkin_LIBRARIES})
 
-add_executable(pure_pursuit
-        nodes/pure_pursuit/pure_pursuit_node.cpp
-        nodes/pure_pursuit/pure_pursuit.cpp
-        nodes/pure_pursuit/pure_pursuit_core.cpp
-        nodes/pure_pursuit/pure_pursuit_viz.cpp
-        )
-target_link_libraries(pure_pursuit libwaypoint_follower ${catkin_LIBRARIES})
-add_dependencies(pure_pursuit
-        ${catkin_EXPORTED_TARGETS})
-
-
-add_executable(pub_path nodes/test/pub_path.cpp)
-
-target_link_libraries(pub_path libwaypoint_follower ${catkin_LIBRARIES})
-add_dependencies(pub_path ${catkin_EXPORTED_TARGETS})
-
+add_executable(wf_simulator nodes/wf_simulator/wf_simulator.cpp)
+target_link_libraries(wf_simulator libwaypoint_follower ${catkin_LIBRARIES})
         
 ## Install executables and/or libraries
-install(TARGETS libwaypoint_follower pure_pursuit pub_path 
+install(TARGETS libwaypoint_follower wf_simulator
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

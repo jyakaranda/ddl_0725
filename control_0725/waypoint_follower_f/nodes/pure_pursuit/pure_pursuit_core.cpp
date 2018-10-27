@@ -62,7 +62,7 @@ void PurePursuitNode::initForROS()
   sub2_ = nh_.subscribe("sim_pose", 10, &PurePursuitNode::callbackFromCurrentPose, this);  //订阅机器人发布的姿态
 
   // setup publisher
-  pub1_ = nh_.advertise<geometry_msgs::TwistStamped>("ctrl_cmd", 10); //发布机器人运动信息
+  pub1_ = nh_.advertise<geometry_msgs::Twist>("/cmd_vel", 10); //发布机器人运动信息
   pub3_ = nh_.advertise<geometry_msgs::Pose>("/cur_pose", 10); //发布机器人当前姿态
   pub11_ = nh_.advertise<visualization_msgs::Marker>("next_waypoint_mark", 0);
   pub12_ = nh_.advertise<visualization_msgs::Marker>("next_target_mark", 0);
@@ -96,7 +96,7 @@ void PurePursuitNode::run()
 
     double kappa = 0;
     bool can_get_curvature = pp_.canGetCurvature(&kappa); //计算机器人的曲率
-    publishTwistStamped(can_get_curvature, kappa);
+    publishTwist(can_get_curvature, kappa);
 
     // for visualization with Rviz
     pub11_.publish(displayNextWaypoint(pp_.getPoseOfNextWaypoint()));
@@ -115,12 +115,11 @@ void PurePursuitNode::run()
   }
 }
 
-void PurePursuitNode::publishTwistStamped(const bool &can_get_curvature, const double &kappa) const
+void PurePursuitNode::publishTwist(const bool &can_get_curvature, const double &kappa) const
 {
-  geometry_msgs::TwistStamped ts;
-  ts.header.stamp = ros::Time::now();
-  ts.twist.linear.x = can_get_curvature ? computeCommandVelocity() : 0;
-  ts.twist.angular.z = can_get_curvature ? kappa * ts.twist.linear.x : 0;
+  geometry_msgs::Twist ts;
+  ts.linear.x = can_get_curvature ? computeCommandVelocity() : 0;
+  ts.angular.z = can_get_curvature ? kappa * ts.linear.x : 0;
   pub1_.publish(ts);
 
   pub3_.publish(pp_.getCurrentPose());

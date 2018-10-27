@@ -94,7 +94,7 @@ private:
   void initForROS();
 
   // functions
-  void publishTwistStamped(const bool &can_get_curvature, const double &kappa) const;
+  void publishTwist(const bool &can_get_curvature, const double &kappa) const;
   void publishDeviationCurrentPosition(const geometry_msgs::Point &point,
                                        const std::vector<geometry_msgs::PoseStamped> &waypoints) const;
 

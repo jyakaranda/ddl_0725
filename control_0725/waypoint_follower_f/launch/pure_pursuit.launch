@@ -2,20 +2,18 @@
 <launch>
 
 	<arg name="is_linear_interpolation" default="True"/>
-	<arg name="publishes_for_steering_robot" default="False"/>
 	<arg name="const_lookahead_distance_" default="4.0"/>
 	<arg name="const_velocity" default="2.0"/>
 	<arg name="lookahead_distance_ratio" default="1.0"/>
 	<arg name="minimum_lookahead_distance" default="1.0"/>
 	<!-- rosrun waypoint_follower pure_pursuit -->
-	<node pkg="waypoint_follower" type="pure_pursuit" name="pure_pursuit" output="screen">
+	<node pkg="waypoint_follower_f" type="pure_pursuit" name="pure_pursuit" output="screen">
 		<param name="is_linear_interpolation" value="$(arg is_linear_interpolation)"/>
-		<param name="publishes_for_steering_robot" value="$(arg publishes_for_steering_robot)"/>
 		<param name="const_lookahead_distance_" value="$(arg const_lookahead_distance_)"/>
 		<param name="const_velocity" value="$(arg const_velocity)"/>
 		<param name="lookahead_distance_ratio" value="$(arg lookahead_distance_ratio)"/>
 		<param name="minimum_lookahead_distance" value="$(arg minimum_lookahead_distance)"/>
 	</node>
   	
-	<node pkg="waypoint_follower" type="pub_path" name="pub_path" output="screen"/>
+	<node pkg="waypoint_follower_f" type="pub_path" name="pub_path" output="screen"/>
 </launch>

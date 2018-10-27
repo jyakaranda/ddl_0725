@@ -37,7 +37,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: PointCloud2
+    SyncSource: ""
 Visualization Manager:
   Class: ""
   Displays:
@@ -74,17 +74,9 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
-        base_link:
-          Value: true
-        imu_link:
-          Value: true
-        laser:
-          Value: true
         map:
           Value: true
-        odom:
-          Value: true
-        wheel_rr:
+        sim_base_link:
           Value: true
       Marker Scale: 5
       Name: TF
@@ -93,14 +85,8 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          odom:
-            base_link:
-              imu_link:
-                {}
-              laser:
-                {}
-              wheel_rr:
-                {}
+          sim_base_link:
+            {}
       Update Interval: 0
       Value: true
     - Acceleration properties:
@@ -321,7 +307,7 @@ Visualization Manager:
       Marker Topic: /ndt/trans_prob
       Name: Marker
       Namespaces:
-        ndt: true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 0.699999988
@@ -343,6 +329,37 @@ Visualization Manager:
       Topic: /main/local_costmap/costmap
       Unreliable: false
       Use Timestamp: false
+      Value: true
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.100000001
+      Class: rviz/Pose
+      Color: 255; 25; 0
+      Enabled: true
+      Head Length: 0.300000012
+      Head Radius: 0.100000001
+      Name: Pose
+      Shaft Length: 1
+      Shaft Radius: 0.0500000007
+      Shape: Arrow
+      Topic: /sim_pose
+      Unreliable: false
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /search_circle_mark
+      Name: Marker
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /next_waypoint_mark
+      Name: Marker
+      Namespaces:
+        {}
+      Queue Size: 100
       Value: true
   Enabled: true
   Global Options:

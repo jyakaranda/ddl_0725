@@ -9,7 +9,7 @@
         <param name="load_or_not" value="false" />
         <param name="lookahead" value="4.0" />
         <param name="max_reaquire" value="5.0" />
-        <param name="speed" value="1.5" />
+        <param name="speed" value="1.5" />  
         <param name="wrap" value="0" />
         <param name="wheelbase" value="0.335" />
         <param name="publish" value="true" />

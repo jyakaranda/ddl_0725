@@ -248,8 +248,8 @@ class PurePursuit(object):
         '''
         print "Start twiddle..."
         pose = [
-            msg.pose.pose.position.x, msg.pose.pose.position.y,
-            utils.quaternion_to_angle(msg.pose.pose.orientation)
+            msg.pose.position.x, msg.pose.position.y,
+            utils.quaternion_to_angle(msg.pose.orientation)
         ]
         err = self.measurement([1., 0., 0.], pose, self.pub_move_point_1,
                                100000.)

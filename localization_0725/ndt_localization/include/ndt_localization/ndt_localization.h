@@ -13,6 +13,7 @@
 #include <visualization_msgs/Marker.h>
 
 #include <iostream>
+#include <iomanip>
 #include <string>
 #include <sstream>
 #include <pcl/point_types.h>
@@ -30,6 +31,7 @@
 #endif
 
 #include "user_protocol.h"
+#include "utils.hpp"
 
 #define METHOD_PCL 0
 #define METHOD_CUDA 1
@@ -62,10 +64,9 @@ private:
 
   ros::Publisher pub_current_pose_;
   geometry_msgs::PoseStamped msg_current_pose_;
-  ros::Publisher pub_loc_conf_;
-  visualization_msgs::Marker msg_loc_conf_;
-  ros::Publisher pub_trans_prob_;
-  visualization_msgs::Marker msg_trans_prob_;
+  ros::Publisher pub_marker_car_;
+  ros::Publisher pub_marker_loc_conf_;
+  ros::Publisher pub_marker_trans_prob_;
 
   ros::Subscriber sub_odom_;
   nav_msgs::Odometry::ConstPtr msg_odom_; // under odom frame
@@ -159,6 +160,12 @@ private:
    * @param msg 
    */
   void pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg);
+
+  static bool pubMarkerText(const ros::Publisher pub, const geometry_msgs::Pose pose, const ros::Time stamp, const std::string frame, const std::string text);
+
+  static bool pubMarkerCylinder(const ros::Publisher pub, const geometry_msgs::Pose pose, const ros::Time stamp, const std::string frame, const geometry_msgs::Vector3 scale);
+
+  static bool pubMarkerCube(const ros::Publisher pub, const geometry_msgs::Pose pose, const ros::Time stamp, const std::string frame, const geometry_msgs::Vector3 scale);
 };
 
 #endif

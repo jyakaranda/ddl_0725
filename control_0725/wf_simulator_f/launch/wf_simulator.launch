@@ -1,0 +1,12 @@
+<!-- -->
+<launch>
+  
+  <arg name="angle_error" default="0.0"/>
+  <arg name="position_error" default="0.0"/>
+  <node pkg="wf_simulator_f" type="wf_simulator" name="wf_simulator" output="screen">
+    <param name="angle_error" value="$(arg angle_error)"/>
+    <param name="position_error" value="$(arg position_error)"/>
+  </node>
+
+
+</launch>

@@ -1,0 +1,3 @@
+- name: /wf_simulator
+  publish: [/sim_pose, /sim_velocity]
+  subscribe: [/ctrl_cmd,　/initialpose]

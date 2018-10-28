@@ -1,6 +1,5 @@
 <launch>
 
-  <include file="$(find common)/launch/static_tf.launch" />
   <!-- <include file="$(find imu_f)/launch/imu_ahrs.launch" /> -->
 
   <!-- <node pkg="pcl_ros" type="pcd_to_pointcloud" name="static_map_node" args="$(find static_map)/map_file/0.pcd">

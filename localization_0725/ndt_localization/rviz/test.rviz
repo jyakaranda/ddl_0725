@@ -17,6 +17,8 @@ Panels:
         - /Path2
         - /Map2
         - /Map3
+        - /Pose1
+        - /Marker5
       Splitter Ratio: 0.5
     Tree Height: 739
   - Class: rviz/Selection
@@ -37,7 +39,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: PointCloud2
 Visualization Manager:
   Class: ""
   Displays:
@@ -63,20 +65,28 @@ Visualization Manager:
       Class: rviz/Map
       Color Scheme: map
       Draw Behind: false
-      Enabled: true
+      Enabled: false
       Name: Map
       Topic: /map
       Unreliable: false
       Use Timestamp: false
-      Value: true
+      Value: false
     - Class: rviz/TF
       Enabled: true
       Frame Timeout: 15
       Frames:
         All Enabled: true
+        base_link:
+          Value: true
+        imu_link:
+          Value: true
+        laser:
+          Value: true
         map:
           Value: true
-        sim_base_link:
+        odom:
+          Value: true
+        wheel_rr:
           Value: true
       Marker Scale: 5
       Name: TF
@@ -85,8 +95,14 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          sim_base_link:
-            {}
+          odom:
+            base_link:
+              imu_link:
+                {}
+              laser:
+                {}
+              wheel_rr:
+                {}
       Update Interval: 0
       Value: true
     - Acceleration properties:
@@ -167,7 +183,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.0500000007
       Style: Flat Squares
-      Topic: /lslidar_point_cloud
+      Topic: /points_cluster
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -307,29 +323,29 @@ Visualization Manager:
       Marker Topic: /ndt/trans_prob
       Name: Marker
       Namespaces:
-        {}
+        ~: true
       Queue Size: 100
       Value: true
     - Alpha: 0.699999988
       Class: rviz/Map
       Color Scheme: costmap
       Draw Behind: false
-      Enabled: true
+      Enabled: false
       Name: Map
       Topic: /main/global_costmap/costmap
       Unreliable: false
       Use Timestamp: false
-      Value: true
+      Value: false
     - Alpha: 0.699999988
       Class: rviz/Map
       Color Scheme: costmap
       Draw Behind: false
-      Enabled: true
+      Enabled: false
       Name: Map
       Topic: /main/local_costmap/costmap
       Unreliable: false
       Use Timestamp: false
-      Value: true
+      Value: false
     - Alpha: 1
       Axes Length: 1
       Axes Radius: 0.100000001
@@ -350,7 +366,7 @@ Visualization Manager:
       Marker Topic: /search_circle_mark
       Name: Marker
       Namespaces:
-        {}
+        search_radius_marker: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -358,7 +374,39 @@ Visualization Manager:
       Marker Topic: /next_waypoint_mark
       Name: Marker
       Namespaces:
+        next_waypoint_marker: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /next_waypoint_mark
+      Name: Marker
+      Namespaces:
+        next_waypoint_marker: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /line_point_mark
+      Name: Marker
+      Namespaces:
         {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /search_circle_mark
+      Name: Marker
+      Namespaces:
+        search_radius_marker: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /trajectory_circle_mark
+      Name: Marker
+      Namespaces:
+        trajectory_circle_marker: true
       Queue Size: 100
       Value: true
   Enabled: true
@@ -386,16 +434,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 137.995728
+      Distance: 166.197601
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 13.5926685
-        Y: 15.9451637
-        Z: -74.7619247
+        X: 29.2098198
+        Y: 22.5989265
+        Z: -75.6679459
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
@@ -404,7 +452,7 @@ Visualization Manager:
       Pitch: 1.56979632
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.18037629
+      Yaw: 3.14537573
     Saved: ~
 Window Geometry:
   Displays:

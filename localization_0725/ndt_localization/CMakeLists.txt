@@ -139,6 +139,7 @@ include_directories(
   ${PCL_INCLUDE_DIRS}
   ${CUDA_INCLUDE_DIRS}
   ../../common_0725/user_protocol/include
+  ../../common_0725/utils/include
 )
 
 add_library(ndt_localization

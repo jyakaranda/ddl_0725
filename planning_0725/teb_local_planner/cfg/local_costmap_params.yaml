@@ -1,5 +1,5 @@
 local_costmap:
-  global_frame: /map
+  global_frame: map
   robot_base_frame: base_link
   update_frequency: 5.0
   publish_frequency: 2.0
@@ -8,8 +8,20 @@ local_costmap:
   width: 10
   height: 10
   resolution: 0.1
-  transform_tolerance: 0.5
+  transform_tolerance: 1.0
+ # obstacle_layer:
+  #  enabled: true
+  #  obstacle_range: 5.0
+  #  raytrace_range: 5.0
+  #  inflation_radius: 2
+  #  track_unknown_space: false
+  #  combination_method: 1
   
+  #  observation_sources: laser_scan_sensor1
+  #  laser_scan_sensor1: {data_type: PointCloud2, topic: /points_cluster, marking: true, clearing: true}
+ 
   plugins:
-   - {name: static_layer,        type: "costmap_2d::StaticLayer"}
+   #- {name: obstacle_layer,          type: "costmap_2d::VoxelLayer"}
+   #- {name: static_layer,        type: "costmap_2d::StaticLayer"}
    - {name: obstacle_layer,      type: "costmap_2d::ObstacleLayer"}
+   - {name: inflation_layer,         type: "costmap_2d::InflationLayer"}

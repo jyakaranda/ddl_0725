@@ -108,14 +108,12 @@ bool HomotopyClassPlanner::plan(const tf::Pose& start, const tf::Pose& goal, con
 bool HomotopyClassPlanner::plan(const PoseSE2& start, const PoseSE2& goal, const geometry_msgs::Twist* start_vel, bool free_goal_vel)
 {
   ROS_ASSERT_MSG(initialized_, "Call initialize() first.");
-  ROS_INFO("start plan");
   // Update old TEBs with new start, goal and velocity
   updateAllTEBs(&start, &goal, start_vel);
   // Init new TEBs based on newly explored homotopy classes
   exploreEquivalenceClassesAndInitTebs(start, goal, cfg_->obstacles.min_obstacle_dist, start_vel);
   // update via-points if activated
   updateReferenceTrajectoryViaPoints(cfg_->hcp.viapoints_all_candidates);
-  ROS_INFO("optimize");
   // Optimize all trajectories in alternative homotopy classes
   optimizeAllTEBs(cfg_->optim.no_inner_iterations, cfg_->optim.no_outer_iterations);
   // Delete any detours
@@ -236,7 +234,6 @@ void HomotopyClassPlanner::renewAndAnalyzeOldTebs(bool delete_detours)
     // WORKAROUND until the commented code below works
     // Here we do not compare cost values. Just first come first serve...
     bool new_flag = addEquivalenceClassIfNew(equivalence_class);
-    ROS_INFO("2");
     if (!new_flag)
     {
       it_teb = tebs_.erase(it_teb);
@@ -327,7 +324,7 @@ void HomotopyClassPlanner::updateReferenceTrajectoryViaPoints(bool all_trajector
 
 void HomotopyClassPlanner::exploreEquivalenceClassesAndInitTebs(const PoseSE2& start, const PoseSE2& goal, double dist_to_obst, const geometry_msgs::Twist* start_vel)
 {
-  ROS_INFO("!");
+  ROS_INFO("Homotopy process old trajectories");
   // first process old trajectories
   renewAndAnalyzeOldTebs(false);
   // inject initial plan if available and not yet captured
@@ -341,8 +338,10 @@ void HomotopyClassPlanner::exploreEquivalenceClassesAndInitTebs(const PoseSE2& s
     initial_plan_teb_.reset();
     initial_plan_teb_ = getInitialPlanTEB(); // this method searches for initial_plan_eq_class_ in the teb container (-> if !initial_plan_teb_)
   }
-  // now explore new homotopy classes and initialize tebs if new ones are found. The appropriate createGraph method is chosen via polymorphism.
+ // now explore new homotopy classes and initialize tebs if new ones are found. The appropriate createGraph method is chosen via polymorphism.
+  //ROS_INFO("begin createGraph!");
   graph_search_->createGraph(start,goal,dist_to_obst,cfg_->hcp.obstacle_heading_threshold, start_vel);
+  ROS_INFO("createGraph end!");
 }
 
 

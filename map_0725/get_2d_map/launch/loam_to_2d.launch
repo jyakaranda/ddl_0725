@@ -1,6 +1,6 @@
 <launch>
     <node pkg="get_2d_map" type="main" name="loam_to_2d" output="screen">
-        <remap from="/loam_velodyne" to="/cloud_pcd" />
+        <remap from="/loam_velodyne" to="/laser_cloud_surround" />
         <param name="resolution" type="double" value="0.02" />
         <param name="width" type="int" value="10" />
         <param name="height" type="int" value="10" />

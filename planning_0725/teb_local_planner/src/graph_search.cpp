@@ -336,6 +336,7 @@ void ProbRoadmapGraph::createGraph(const PoseSE2& start, const PoseSE2& goal, do
   std::vector<HcGraphVertexType> visited;
   visited.push_back(start_vtx);
   DepthFirst(graph_,visited,goal_vtx, start.theta(), goal.theta(), start_velocity);
+  ROS_INFO("find paths over");
 }
 
 } // end namespace

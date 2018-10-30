@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   sensor_msgs
   std_msgs
+  dynamic_reconfigure
 )
 
 ## System dependencies are found with CMake's conventions
@@ -90,10 +91,10 @@ find_package(PCL REQUIRED)
 ##     and list every .cfg file to be processed
 
 ## Generate dynamic reconfigure parameters in the 'cfg' folder
-# generate_dynamic_reconfigure_options(
-#   cfg/DynReconf1.cfg
-#   cfg/DynReconf2.cfg
-# )
+generate_dynamic_reconfigure_options(
+  cfg/rt_filter.cfg
+  cfg/filter.cfg
+)
 
 ###################################
 ## catkin specific configuration ##
@@ -157,7 +158,7 @@ add_executable(filter_node
 )
 
 add_dependencies(filter_node
-  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
+  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg
 )
 
 target_link_libraries(filter_node
@@ -166,6 +167,10 @@ target_link_libraries(filter_node
 
 add_executable(rt_filter_node
   src/rt_filter_node.cpp
+)
+
+add_dependencies(rt_filter_node
+  ${PROJECT_NAME}_gencfg
 )
 
 target_link_libraries(rt_filter_node

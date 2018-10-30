@@ -32,14 +32,15 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <pcl_conversions/pcl_conversions.h>
-
+#include <dynamic_reconfigure/server.h>
+#include <obj_map/Points2CostmapConfig.h>
 #include <utility>
 
 namespace
 {
-double HEIGHT_LIMIT = 0.1; // from sensor
-double CAR_LENGTH = 4.5;
-double CAR_WIDTH = 1.75;
+double HEIGHT_LIMIT = 20; // from sensor
+double CAR_LENGTH = 0.5;
+double CAR_WIDTH = 0.5;
 
 ros::Publisher g_costmap_pub;
 double g_resolution;
@@ -51,6 +52,7 @@ double g_offset_x;
 double g_offset_y;
 double g_offset_z;
 bool g_filter;
+int g_cost_base;
 
 pcl::PointCloud<pcl::PointXYZ> g_obstacle_sim_points;
 bool g_use_obstacle_sim = false;
@@ -94,7 +96,10 @@ std::vector<int> createCostMap(const pcl::PointCloud<pcl::PointXYZ> &scan)
   for (const auto &p : scan.points)
   {
     if (p.z > HEIGHT_LIMIT)
+    {
+      ROS_INFO("x: %.2f, y: %.2f, z: %.2f", p.x, p.y, p.z);
       continue;
+    }
     if (std::fabs(p.x) < CAR_LENGTH && std::fabs(p.y) < CAR_WIDTH)
       continue;
 
@@ -102,10 +107,13 @@ std::vector<int> createCostMap(const pcl::PointCloud<pcl::PointXYZ> &scan)
     int grid_x = (p.x + map_center_x) / g_resolution;
     int grid_y = (p.y + map_center_y) / g_resolution;
     if (grid_x < 0 || grid_x >= g_cell_width || grid_y < 0 || grid_y >= g_cell_height)
+    {
+      ROS_INFO("x: %.2f, y: %.2f", p.x, p.y);
       continue;
+    }
 
     int index = g_cell_width * grid_y + grid_x;
-    cost_map[index] += 15;
+    cost_map[index] += g_cost_base;
 
     // Max cost value is 100
     if (cost_map[index] > 100)
@@ -219,6 +227,11 @@ void createOccupancyGrid(const sensor_msgs::PointCloud2::ConstPtr &input)
   count++;
 }
 
+void cfgCB(const obj_map::Points2CostmapConfig &config, uint32_t level)
+{
+  g_cost_base = config.costBase;
+}
+
 } // namespace
 
 int main(int argc, char **argv)
@@ -241,12 +254,16 @@ int main(int argc, char **argv)
   private_nh.param<double>("car_width", CAR_WIDTH, 1.75);
   private_nh.param<double>("car_length", CAR_LENGTH, 4.5);
   private_nh.param<bool>("filter", g_filter, false);
+  private_nh.param<int>("cost_base", g_cost_base, 15);
   g_cell_width = static_cast<int>(std::ceil(g_map_width / g_resolution));
   g_cell_height = static_cast<int>(std::ceil(g_map_height / g_resolution));
 
   g_costmap_pub = nh.advertise<nav_msgs::OccupancyGrid>("realtime_cost_map", 10);
   ros::Subscriber points_sub = nh.subscribe(points_topic, 10, createOccupancyGrid);
   ros::Subscriber obstacle_sim_points_sub = nh.subscribe("obstacle_sim_pointcloud", 1, callbackFromObstacleSim);
+  dynamic_reconfigure::Server<obj_map::Points2CostmapConfig> cfg_server;
+  dynamic_reconfigure::Server<obj_map::Points2CostmapConfig>::CallbackType cfg_callback = boost::bind(&cfgCB, _1, _2);
+  cfg_server.setCallback(cfg_callback);
 
   ros::spin();
 }

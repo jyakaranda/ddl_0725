@@ -14,12 +14,17 @@ find_package(catkin REQUIRED COMPONENTS
         grid_map_cv
         grid_map_msgs
         vector_map
+        dynamic_reconfigure
         )
 
 find_package(Qt5Core REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(PCL REQUIRED)
 find_package(OpenMP)
+
+generate_dynamic_reconfigure_options(
+  config/points2costmap.cfg
+)
 
 if (OPENMP_FOUND)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
@@ -58,6 +63,9 @@ target_link_libraries(laserscan2costmap
 add_executable(points2costmap
         nodes/points2costmap/points2costmap.cpp
         )
+add_dependencies(points2costmap
+        ${PROJECT_NAME}_gencfg
+)
 target_link_libraries(points2costmap
         ${catkin_LIBRARIES}
         )

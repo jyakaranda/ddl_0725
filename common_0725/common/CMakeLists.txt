@@ -10,6 +10,8 @@ project(common)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
+  sensor_msgs
+  tf
 )
 
 ## System dependencies are found with CMake's conventions
@@ -115,7 +117,7 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
+  include
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -148,6 +150,14 @@ include_directories(
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
+
+add_executable(filter_imu
+  src/filter_imu.cpp
+)
+
+target_link_libraries(filter_imu
+  ${catkin_LIBRARIES}
+)
 
 #############
 ## Install ##

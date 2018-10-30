@@ -5,5 +5,5 @@
         <arg name="use_gpu" value="true" />
     </include>
 
-    <!-- <include file="$(find loam_velodyne)/launch/loam_velodyne.launch" /> -->
+    <include file="$(find loam_velodyne)/launch/loam_velodyne.launch" />
 </launch>

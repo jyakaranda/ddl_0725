@@ -10,13 +10,13 @@
   <include file="$(find common)/launch/static_tf.launch" />
 
   <node pkg="static_map" type="static_map_node" name="static_map_node">
-    <param name="pcd_file" value="$(find static_map)/map_file/map_1010_cluster_filtered.pcd" />
+    <param name="pcd_file" value="$(find static_map)/map_file/map_1008_filtered.pcd" />
     <param name="map_frame" value="map" />
     <param name="duration" value="1.0" />
     <remap from="/static_map" to="/map/point_cloud" />
   </node>
 
-  <node pkg="map_server" type="map_server" name="gridmap_node" args="$(find static_map)/map_file/map_1010_cluster_gridmap.yaml">
+  <node pkg="map_server" type="map_server" name="gridmap_node" args="$(find static_map)/map_file/map_1008_filtered_gridmap.yaml">
   </node>
 
   <!-- <node pkg="map_filter" type="rt_filter_node" name="rt_filter_node">

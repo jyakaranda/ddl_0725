@@ -4,6 +4,7 @@
 #include <ros/duration.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <nav_msgs/OccupancyGrid.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <dynamic_reconfigure/server.h>
 #include <gen_costmap/GenCostmapConfig.h>
 
@@ -16,10 +17,14 @@
 #include <vector>
 
 ros::Publisher pub_costmap_;
+ros::Publisher pub_test_;
+ros::Publisher pub_pc_;
 nav_msgs::OccupancyGrid msg_costmap_;
 // tf::TransformListener tf_listener_;      // 这玩意居然是个 nodehandle ，如果在全局定义的话会报错：You must call ros::init() before creating the first NodeHandle
 tf::StampedTransform tf_base2laser_;
 tf::StampedTransform tf_map2base_;
+tf::StampedTransform tf_map2laser_;
+geometry_msgs::PoseStamped msg_cur_pose_;
 
 int param_frame_num_;
 double param_confidence_;
@@ -42,21 +47,12 @@ int g_height_;
 std::vector<int> g_costmap_;
 int g_count_;
 Eigen::Matrix4f g_tf_b2l_;
+Eigen::Matrix4f g_tf_m2b_;
+Eigen::Matrix4f g_tf_m2l_;
 
 bool setOccupancyGrid(nav_msgs::OccupancyGrid *og)
 {
-    // tf::TransformListener tf_listener_;
-    // try
-    // {
-    //     tf_listener_.waitForTransform(param_frame_map_, param_frame_base_, ros::Time(0), ros::Duration(0.1));
-    //     tf_listener_.lookupTransform(param_frame_map_, param_frame_base_, ros::Time(0), tf_map2base_);
-    // }
-    // catch (tf::TransformException &ex)
-    // {
-    //     ROS_ERROR("Error waiting for transform: %s", ex.what());
-    //     return false;
-    // }
-
+    // costmap 以 laser 为中心
     int width = std::ceil((param_xh_ - param_xl_) / param_resolution_);
     int height = std::ceil((param_yh_ - param_yl_) / param_resolution_);
     if (width == g_width_ && height == g_height_)
@@ -70,21 +66,28 @@ bool setOccupancyGrid(nav_msgs::OccupancyGrid *og)
         g_costmap_.resize(g_width_ * g_height_);
     }
     // TODO: bug
-    og->header.frame_id = param_frame_base_; // frame 为 base_link
+    og->header.frame_id = param_frame_laser_; // frame 为 map
     og->info.resolution = param_resolution_;
     og->info.width = g_width_;
     og->info.height = g_height_;
-    // og->info.origin.position.x = tf_map2base_.getOrigin().getX() - param_xl_;
-    // og->info.origin.position.y = tf_map2base_.getOrigin().getY() - param_yl_;
-    // og->info.origin.position.z = 0;
-    // tf::Quaternion tmp_q;
-    // double roll, pitch, yaw;
-    // tf::Matrix3x3(tf_map2base_.getRotation()).getRPY(roll, pitch, yaw);
-    // tmp_q.setRPY(0., 0., yaw);
-    // tf::quaternionTFToMsg(tmp_q, og->info.origin.orientation);
     og->info.origin.position.x = param_xl_;
     og->info.origin.position.y = param_yl_;
+    og->info.origin.position.z = 0;
+    // tf::Quaternion tmp_q;
+    // double roll, pitch, yaw;
+    // tf::Matrix3x3 m;
+    // m.setValue(static_cast<double>(g_tf_m2l_(0, 0)), static_cast<double>(g_tf_m2l_(0, 1)), static_cast<double>(g_tf_m2l_(0, 2)),
+    //            static_cast<double>(g_tf_m2l_(1, 0)), static_cast<double>(g_tf_m2l_(1, 1)), static_cast<double>(g_tf_m2l_(1, 2)),
+    //            static_cast<double>(g_tf_m2l_(2, 0)), static_cast<double>(g_tf_m2l_(2, 1)), static_cast<double>(g_tf_m2l_(2, 2)));
+    // m.getRPY(roll, pitch, yaw);
+    // tmp_q.setRPY(0., 0., yaw);
+    // tf::quaternionTFToMsg(tmp_q, og->info.origin.orientation);
     og->info.origin.orientation.w = 1.0;
+    // geometry_msgs::PoseStamped pose;
+    // pose.pose = og->info.origin;
+    // pose.header.stamp = ros::Time::now();
+    // pose.header.frame_id = param_frame_map_;
+    // pub_test_.publish(pose);
     return true;
 }
 
@@ -144,8 +147,33 @@ std::vector<int> filterCostMap(std::vector<int> &cost_map)
     return filtered_cost_map;
 }
 
+void poseCB(const geometry_msgs::PoseStampedConstPtr &msg)
+{
+    msg_cur_pose_ = *msg;
+}
+
 void pointsCB(const sensor_msgs::PointCloud2ConstPtr &msg)
 {
+    // tf::TransformListener tf_listener_;
+    // try
+    // {
+    //     tf_listener_.waitForTransform(param_frame_map_, param_frame_base_, msg->header.stamp, ros::Duration(1.0));
+    //     tf_listener_.lookupTransform(param_frame_map_, param_frame_base_, msg->header.stamp, tf_map2base_);
+    // }
+    // catch (tf::TransformException &ex)
+    // {
+    //     ROS_ERROR("Error waiting for transform in gen_costmap: %s", ex.what());
+    //     return;
+    // }
+    // double roll, pitch, yaw;
+    // tf::Transform tf_map2laser = tf_map2base_ * tf_base2laser_;
+    // tf::Matrix3x3(tf_map2laser.getRotation()).getRPY(roll, pitch, yaw);
+    // Eigen::Translation3f tl_m2l(tf_map2laser.getOrigin().getX(), tf_map2laser.getOrigin().getY(), tf_map2laser.getOrigin().getZ()); // tl: translation
+    // Eigen::AngleAxisf rot_x_m2l(roll, Eigen::Vector3f::UnitX());                                                                    // rot: rotation
+    // Eigen::AngleAxisf rot_y_m2l(pitch, Eigen::Vector3f::UnitY());
+    // Eigen::AngleAxisf rot_z_m2l(yaw, Eigen::Vector3f::UnitZ());
+    // g_tf_m2l_ = (tl_m2l * rot_z_m2l * rot_y_m2l * rot_x_m2l).matrix();
+
     if (g_count_ % param_frame_num_ == 0)
     {
         // ROS_INFO("gen new costmap.");
@@ -160,15 +188,20 @@ void pointsCB(const sensor_msgs::PointCloud2ConstPtr &msg)
     pcl::PointCloud<pcl::PointXYZ> pc_laser, pc_base;
     pcl::fromROSMsg(*msg, pc_laser);
     // TODO: 应转换到 map
-    pcl::transformPointCloud(pc_laser, pc_base, g_tf_b2l_); // 将 laser 坐标的点云转换到 base_link 坐标下，因为局部 costmap 是以 base_link 为基准的
+    // pcl::transformPointCloud(pc_laser, pc_base, g_tf_m2l_); // 将 laser 坐标的点云转换到 map 坐标下
+    // sensor_msgs::PointCloud2 msg_pc;
+    // pcl::toROSMsg(pc_base, msg_pc);
+    // msg_pc.header.frame_id = param_frame_map_;
+    // msg_pc.header.stamp = msg->header.stamp;
+    // pub_pc_.publish(msg_pc);
 
-    for (const auto &p : pc_base.points)
+    for (const auto &p : pc_laser.points)
     {
         int i_x = std::floor((p.x - msg_costmap_.info.origin.position.x) / msg_costmap_.info.resolution);
         int i_y = std::floor((p.y - msg_costmap_.info.origin.position.y) / msg_costmap_.info.resolution);
         double z = p.z;
         // TODO: 判断 z 不对
-        if ((i_x < 0 || i_x >= g_width_) || (i_y < 0 || i_y >= g_height_) || (z < param_zl_ || z > param_zh_) || z <= (0.425 - msg_costmap_.info.origin.position.z))
+        if ((i_x < 0 || i_x >= g_width_) || (i_y < 0 || i_y >= g_height_) || (z < param_zl_ || z > param_zh_) || z <= (param_delta_ - (msg_cur_pose_.pose.position.z + tf_base2laser_.getOrigin().getZ())))
         {
             continue;
         }
@@ -265,8 +298,11 @@ int main(int argc, char **argv)
     pnh.param<std::string>("laser_frame", param_frame_laser_, std::string("/laser"));
 
     ros::Subscriber sub_points = nh.subscribe("/lslidar_point_cloud", 10, pointsCB);
+    ros::Subscriber sub_cur_pose = nh.subscribe("/ndt/current_pose", 50, poseCB);
     // ros::Subscriber sub_map = nh.subscribe("/pc_map", 1, mapCB);
     pub_costmap_ = nh.advertise<nav_msgs::OccupancyGrid>("/costmap", 1);
+    // pub_test_ = nh.advertise<geometry_msgs::PoseStamped>("/pub_test", 1);
+    // pub_pc_ = nh.advertise<sensor_msgs::PointCloud2>("/pub_pc", 1);
     dynamic_reconfigure::Server<gen_costmap::GenCostmapConfig> cfg_server;
     dynamic_reconfigure::Server<gen_costmap::GenCostmapConfig>::CallbackType cfg_callback = boost::bind(&cfgCB, _1, _2);
     cfg_server.setCallback(cfg_callback);

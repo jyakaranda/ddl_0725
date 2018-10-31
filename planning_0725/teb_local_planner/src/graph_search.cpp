@@ -71,7 +71,7 @@ void GraphSearchInterface::DepthFirst(HcGraph& g, std::vector<HcGraphVertexType>
       break;
     }
   }
-  //ROS_INFO("recursion for vertices");
+ // ROS_INFO("recursion for vertices");
   /// Recursion for all adjacent vertices
   for ( boost::tie(it,end) = boost::adjacent_vertices(back,g); it!=end; ++it)
   {
@@ -80,7 +80,7 @@ void GraphSearchInterface::DepthFirst(HcGraph& g, std::vector<HcGraphVertexType>
 
 
     visited.push_back(*it);
-
+    ROS_INFO("loop");
     // recursion step
     DepthFirst(g, visited, goal, start_orientation, goal_orientation, start_velocity);
 

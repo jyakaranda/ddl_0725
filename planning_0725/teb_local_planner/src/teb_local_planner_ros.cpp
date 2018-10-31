@@ -828,7 +828,7 @@ double TebLocalPlannerROS::estimateLocalGoalOrientation(const std::vector<geomet
 void TebLocalPlannerROS::saturateVelocity(double& vx, double& vy, double& omega, double max_vel_x, double max_vel_y, double max_vel_theta, double max_vel_x_backwards) const
 {
   // Limit translational velocity for forward driving
-om  if (vx > max_vel_x)
+  if (vx > max_vel_x)
     vx = max_vel_x;
   
   // limit strafing velocity

@@ -1,4 +1,6 @@
 <launch>
-    <node pkg="object_map" type="points2costmap" name="point2costmap">
+    <node pkg="gen_costmap" type="gen_costmap" name="local_costmap_node" output="screen">
+        <!-- <remap from="/lslidar_point_cloud" to="/points_cluster" /> -->
+        <rosparam file="$(find gen_costmap)/cfg/gen_costmap.yaml" command="load" />
     </node>
 </launch>

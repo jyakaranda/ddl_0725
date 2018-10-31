@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(gen_costmap)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-# add_compile_options(-std=c++11)
+add_compile_options(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_msgs
   dynamic_reconfigure
+  tf
 )
 
 ## System dependencies are found with CMake's conventions
@@ -107,7 +108,7 @@ generate_dynamic_reconfigure_options(
 catkin_package(
  INCLUDE_DIRS include
  LIBRARIES gen_costmap
- CATKIN_DEPENDS nav_msgs roscpp rospy sensor_msgs std_msgs
+ CATKIN_DEPENDS nav_msgs roscpp rospy sensor_msgs std_msgs tf
  DEPENDS PCL
 )
 

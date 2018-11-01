@@ -418,7 +418,7 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg
     rawodom_init_ = true;
     tf::poseTFToMsg(transform2, msg_rawodom_.pose.pose);
   }
-
+  geometry_msgs::Vector3 scale;
   scale.x = 6.0 / (trans_probability_ + 0.1);
   scale.y = 3.0 / (fitness_score_ + 0.1);
   scale.z = 0.1;

@@ -64,6 +64,7 @@ void OdomImu::imuCB(const sensor_msgs::Imu::ConstPtr &msg)
     return;
   }
 
+  // 进行一个低通滤波
   double angle_vel_x = round(msg->angular_velocity.x / param_angle_vel_sensitive_) * param_angle_vel_sensitive_;
   double angle_vel_y = round(msg->angular_velocity.y / param_angle_vel_sensitive_) * param_angle_vel_sensitive_;
   double angle_vel_z = round(msg->angular_velocity.z / param_angle_vel_sensitive_) * param_angle_vel_sensitive_;

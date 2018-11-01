@@ -64,7 +64,6 @@ private:
 
   ros::Publisher pub_current_pose_;
   geometry_msgs::PoseStamped msg_current_pose_;
-  ros::Publisher pub_marker_car_;
   ros::Publisher pub_marker_loc_conf_;
   ros::Publisher pub_marker_trans_prob_;
 

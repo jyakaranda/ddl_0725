@@ -41,7 +41,6 @@ bool NDTLocalization::init()
   sub_odom_ = nh_.subscribe<nav_msgs::Odometry>("/odom/imu", 500, boost::bind(&NDTLocalization::odomCB, this, _1));
   sub_point_cloud_ = nh_.subscribe<sensor_msgs::PointCloud2>("/lslidar_point_cloud", 20, boost::bind(&NDTLocalization::pointCloudCB, this, _1));
   pub_current_pose_ = nh_.advertise<geometry_msgs::PoseStamped>("/ndt/current_pose", 100);
-  pub_marker_car_ = nh_.advertise<visualization_msgs::Marker>("/ndt/car_pose", 1);
   pub_marker_loc_conf_ = nh_.advertise<visualization_msgs::Marker>("/ndt/loc_conf", 1);
   pub_marker_trans_prob_ = nh_.advertise<visualization_msgs::Marker>("/ndt/trans_prob", 1);
 
@@ -420,16 +419,10 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg
     tf::poseTFToMsg(transform2, msg_rawodom_.pose.pose);
   }
 
-  geometry_msgs::Vector3 scale;
-  scale.x = 0.51;
-  scale.y = 0.43;
-  scale.z = 0.48;
-  pubMarkerCube(pub_marker_car_, msg_current_pose_.pose, msg->header.stamp, param_map_frame_, scale);
-
   scale.x = 6.0 / (trans_probability_ + 0.1);
   scale.y = 3.0 / (fitness_score_ + 0.1);
   scale.z = 0.1;
-  pubMarkerCylinder(pub_marker_loc_conf_, msg_current_pose_.pose, msg->header.stamp, param_map_frame_, scale);
+  util::pubMarkerCylinder(pub_marker_loc_conf_, msg_current_pose_.pose, msg->header.stamp, param_map_frame_, scale);
 
   std::stringstream ss;
   ss << std::fixed << std::setprecision(4) << "ndt_pose: (" << current_pose_.x << ", " << current_pose_.y << ", " << current_pose_.z << "; " << RAD2ANGLE(current_pose_.roll) << ", " << RAD2ANGLE(current_pose_.pitch) << ", " << RAD2ANGLE(current_pose_.yaw) << ")" << std::endl
@@ -441,78 +434,10 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg
   pose.position.x = 0.;
   pose.position.z = 1.;
   pose.position.y = -20.;
-  pubMarkerText(pub_marker_trans_prob_, pose, msg->header.stamp, param_map_frame_, ss.str());
+  util::pubMarkerText(pub_marker_trans_prob_, pose, msg->header.stamp, param_map_frame_, ss.str());
 
   offset_odom_.reset();
   // current_pose_odom_ = current_pose_;
   // pre_pose_odom_ = current_pose_;
   pre_pose_ = current_pose_;
-}
-
-bool NDTLocalization::pubMarkerText(const ros::Publisher pub, const geometry_msgs::Pose pose, const ros::Time stamp, const std::string frame, const std::string text)
-{
-  visualization_msgs::Marker msg;
-  std_msgs::ColorRGBA color;
-  color.a = 1.0;
-  color.b = 0.0;
-  color.r = 1.0;
-  color.g = 1.0;
-  msg.header.stamp = stamp;
-  msg.header.frame_id = frame;
-  msg.ns = "~";
-  msg.id = 0;
-  msg.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
-  msg.action = visualization_msgs::Marker::ADD;
-  msg.text = text;
-  msg.pose = pose;
-  msg.color = color; // yellow
-  msg.scale.x = 0.;
-  msg.scale.y = 5.;
-  msg.scale.z = 1.;
-  msg.frame_locked = true;
-  pub.publish(msg);
-  return true;
-}
-
-bool NDTLocalization::pubMarkerCylinder(const ros::Publisher pub, const geometry_msgs::Pose pose, const ros::Time stamp, const std::string frame, const geometry_msgs::Vector3 scale)
-{
-  visualization_msgs::Marker msg;
-  std_msgs::ColorRGBA color;
-  color.a = 0.4;
-  color.b = 1.0;
-  color.r = 0.0;
-  color.g = 0.0;
-  msg.header.stamp = stamp;
-  msg.header.frame_id = frame;
-  msg.ns = "~";
-  msg.id = 0;
-  msg.type = visualization_msgs::Marker::SPHERE;
-  msg.action = visualization_msgs::Marker::ADD;
-  msg.pose = pose;
-  msg.color = color;
-  msg.scale = scale;
-  msg.frame_locked = true;
-  pub.publish(msg);
-  return true;
-}
-
-bool NDTLocalization::pubMarkerCube(const ros::Publisher pub, const geometry_msgs::Pose pose, const ros::Time stamp, const std::string frame, const geometry_msgs::Vector3 scale)
-{
-  visualization_msgs::Marker msg;
-  std_msgs::ColorRGBA color;
-  color.a = 1.0;
-  color.b = 1.0;
-  color.r = 1.0;
-  color.g = 1.0;
-  msg.header.stamp = stamp;
-  msg.header.frame_id = frame;
-  msg.ns = "~";
-  msg.id = 0;
-  msg.type = visualization_msgs::Marker::CUBE;
-  msg.action = visualization_msgs::Marker::ADD;
-  msg.pose = pose;
-  msg.color = color;
-  msg.scale = scale;
-  msg.frame_locked = true;
-  pub.publish(msg);
 }

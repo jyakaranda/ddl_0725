@@ -1,0 +1,6 @@
+global_frame: /map
+robot_base_frame: /base_link
+origin: 
+  x: 0
+  y: 0
+resolution: 0.02

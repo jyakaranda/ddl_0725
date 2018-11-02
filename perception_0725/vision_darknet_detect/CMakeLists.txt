@@ -1,6 +1,6 @@
 SET( CMAKE_CXX_FLAGS "-std=c++11 -O3")
 cmake_minimum_required(VERSION 2.8.12)
-project(vision_darknet_detect)
+project(vision_darknet)
 
 
 if(COMMAND cmake_policy)

@@ -238,7 +238,31 @@ void pointsCB(const sensor_msgs::PointCloud2ConstPtr &msg)
         msg_costmap_.data.clear();
         msg_costmap_.data.insert(msg_costmap_.data.end(), g_costmap_.begin(), g_costmap_.end());
         msg_costmap_.header.stamp = msg->header.stamp;
-        pub_costmap_.publish(msg_costmap_);
+
+        nav_msgs::OccupancyGrid global_costmap = msg_global_costmap_;
+        tf_map2base_.setOrigin(tf::Vector3(msg_cur_pose_.pose.position.x, msg_cur_pose_.pose.position.y, msg_cur_pose_.pose.position.z));
+        tf_map2base_.setRotation(tf::Quaternion(msg_cur_pose_.pose.orientation.x, msg_cur_pose_.pose.orientation.y, msg_cur_pose_.pose.orientation.z, msg_cur_pose_.pose.orientation.w));
+        tf::Transform tf_m2l = tf_map2base_ * tf_base2laser_;
+        tf::Point lp, gp;
+        int gi = 0, gj = 0;
+        // 将 local costmap 添加到 global costmap 中
+        for (int li = 0; li < msg_costmap_.info.width; li++)
+        {
+            for (int lj = 0; lj < msg_costmap_.info.height; lj++)
+            {
+                lp.setX(msg_costmap_.info.origin.position.x + li * msg_costmap_.info.resolution);
+                lp.setY(msg_costmap_.info.origin.position.y + lj * msg_costmap_.info.resolution);
+                gp = tf_m2l * lp;
+                gi = std::floor((gp.getX() - global_costmap.info.origin.position.x) / global_costmap.info.resolution);
+                gj = std::floor((gp.getY() - global_costmap.info.origin.position.y) / global_costmap.info.resolution);
+                if (gi >= 0 && gi < global_costmap.info.width && gj >= 0 && gj < global_costmap.info.height)
+                {
+                    global_costmap.data[gj * global_costmap.info.width + gi] += msg_costmap_.data[lj * msg_costmap_.info.width + li];
+                }
+            }
+        }
+
+        pub_costmap_.publish(global_costmap);
     }
 }
 

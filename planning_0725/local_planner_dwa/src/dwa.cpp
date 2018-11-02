@@ -29,7 +29,8 @@ bool DWAPlanner::init()
   sub_pose_ = nh_.subscribe<geometry_msgs::PoseStamped>("/ndt/current_pose", 50, boost::bind(&DWAPlanner::poseCB, this, _1));
   sub_odom_ = nh_.subscribe<nav_msgs::Odometry>("/odom/imu", 50, boost::bind(&DWAPlanner::odomCB, this, _1));
   sub_global_path_ = nh_.subscribe<nav_msgs::Path>("/global_path", 1, boost::bind(&DWAPlanner::globalPathCB, this, _1));
-  sub_local_map_ = nh_.subscribe<nav_msgs::OccupancyGrid>("/local_costmap", 10, boost::bind(&DWAPlanner::localMapCB, this, _1));
+  sub_local_map_ = nh_.subscribe<nav_msgs::OccupancyGrid>("/local_costmap", 1, boost::bind(&DWAPlanner::localMapCB, this, _1));
+  sub_global_map_ = nh_.subscribe<nav_msgs::OccupancyGrid>("/global_costmap", 1, boost::bind(&DWAPlanner::globalCostmapCB, this, _1));
   cfg_cb_ = boost::bind(&DWAPlanner::cfg_cb_, this, _1, _2);
   cfg_server_.setCallback(cfg_cb_);
   pub_cmd_vel_ = nh_.advertise<geometry_msgs::Twist>("/cmd_vel", 1);
@@ -59,6 +60,7 @@ bool DWAPlanner::generateTrajectories(const geometry_msgs::Pose &pose, const geo
       v_samples.push_back(vel_tmp);
     }
   }
+  nav_msgs::OccupancyGrid global_map = msg_global_map_;
 
   geometry_msgs::Pose pose_tmp;
 
@@ -81,7 +83,7 @@ bool DWAPlanner::generateTrajectories(const geometry_msgs::Pose &pose, const geo
 
     for (int j = 0; j < num_step; j++)
     {
-      if (isOutofMap(pose_tmp.position.x, pose_tmp.position.y, global_local_costmap_))
+      if (isOutofMap(pose_tmp.position.x, pose_tmp.position.y, global_map))
       {
         flag = false;
         break;
@@ -105,14 +107,14 @@ bool DWAPlanner::generateTrajectories(const geometry_msgs::Pose &pose, const geo
     {
       tmp_traj.getPoint(j, px, py, pth);
       // 2. obstacle_cost of footprint
-      for (int x = (px - param_footprint_radius_ / 2.) / global_local_costmap_.info.resolution; x < (px + param_footprint_radius_ / 2.) / global_local_costmap_.info.resolution; x++)
+      for (int x = (px - param_footprint_radius_ / 2.) / global_map.info.resolution; x < (px + param_footprint_radius_ / 2.) / global_map.info.resolution; x++)
       {
-        for (int y = (py - param_footprint_radius_ / 2.) / global_local_costmap_.info.resolution; y < (py + param_footprint_radius_ / 2.) / global_local_costmap_.info.resolution; y++)
+        for (int y = (py - param_footprint_radius_ / 2.) / global_map.info.resolution; y < (py + param_footprint_radius_ / 2.) / global_map.info.resolution; y++)
         {
-          cost_2 += getCostofMap(x, y, global_local_costmap_);
+          cost_2 += getCostofMap(x, y, global_map);
         }
       }
-      // cost_2 += getCostofMap(px, py, global_local_costmap_);
+      // cost_2 += getCostofMap(px, py, global_map);
       if (cost_2 >= 100)
       {
         flag = false;
@@ -123,12 +125,21 @@ bool DWAPlanner::generateTrajectories(const geometry_msgs::Pose &pose, const geo
     cost_3 -= tmp_traj.xv_;
     cost_4 += std::fabs(tmp_traj.thetav_);
 
+    double score = -cost_2 - cost_3 / param_max_vel_x_ - cost_4 / param_max_ang_z_;
+    if (score > best_score)
+    {
+      best_score = score;
+      best_traj = tmp_traj;
+    }
+
     if (!flag)
     {
       continue;
     }
     v_trajs.push_back(tmp_traj);
   }
+
+  // TODO: viz trajs
 }
 
 bool DWAPlanner::findBestPath(nav_msgs::Path &path)
@@ -210,6 +221,7 @@ void DWAPlanner::localMapCB(const nav_msgs::OccupancyGrid::ConstPtr &msg)
 
   pthread_mutex_lock(&mutex_path_);
   // 投影局部地图到全局坐标系下
+  // TODO: 这是不对的
   tf::Pose tf_pose;
   tf::poseMsgToTF(msg->info.origin, tf_pose);
   tf_pose = tf_g2l_ * tf_pose;
@@ -238,6 +250,11 @@ void DWAPlanner::localMapCB(const nav_msgs::OccupancyGrid::ConstPtr &msg)
   //   ref_global_path_.push_back(pose);
   // }
   pthread_mutex_unlock(&mutex_path_);
+}
+
+void DWAPlanner::globalCostmapCB(const nav_msgs::OccupancyGrid::ConstPtr &msg)
+{
+  msg_global_map_ = *msg;
 }
 
 void DWAPlanner::cfgCB(const local_planner_dwa::DWAConfig &config, uint32_t level)

@@ -63,6 +63,8 @@ private:
   nav_msgs::Path msg_global_path_;
   ros::Subscriber sub_local_map_; // 获取局部地图
   nav_msgs::OccupancyGrid msg_local_map_;
+  ros::Subscriber sub_global_map_;
+  nav_msgs::OccupancyGrid msg_global_map_;
   dynamic_reconfigure::Server<local_planner_dwa::DWAConfig> cfg_server_;
   dynamic_reconfigure::Server<local_planner_dwa::DWAConfig>::CallbackType cfg_cb_;
   tf::TransformListener tf_listener_;
@@ -75,6 +77,7 @@ private:
   void odomCB(const nav_msgs::Odometry::ConstPtr &msg);
   void globalPathCB(const nav_msgs::Path::ConstPtr &msg);
   void localMapCB(const nav_msgs::OccupancyGrid::ConstPtr &msg);
+  void DWAPlanner::globalCostmapCB(const nav_msgs::OccupancyGrid::ConstPtr &msg);
   void cfgCB(const local_planner_dwa::DWAConfig &config, uint32_t level);
 
   bool isOutofMap(const double x, const double y, const nav_msgs::OccupancyGrid &map);

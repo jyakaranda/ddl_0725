@@ -1,9 +1,11 @@
 #include <ros/ros.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
+#include <tf/transform_datatypes.h>
 #include <ros/duration.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <nav_msgs/OccupancyGrid.h>
+#include <nav_msgs/Path.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <dynamic_reconfigure/server.h>
 #include <gen_costmap/GenCostmapConfig.h>
@@ -19,7 +21,9 @@
 ros::Publisher pub_costmap_;
 ros::Publisher pub_test_;
 ros::Publisher pub_pc_;
+ros::Publisher pub_obstacle_path_;
 nav_msgs::OccupancyGrid msg_costmap_;
+nav_msgs::OccupancyGrid msg_global_costmap_;
 // tf::TransformListener tf_listener_;      // 这玩意居然是个 nodehandle ，如果在全局定义的话会报错：You must call ros::init() before creating the first NodeHandle
 tf::StampedTransform tf_base2laser_;
 tf::StampedTransform tf_map2base_;
@@ -231,11 +235,69 @@ void pointsCB(const sensor_msgs::PointCloud2ConstPtr &msg)
             g_costmap_ = filterCostMap(g_costmap_);
         }
         // ROS_INFO("publish new costmap.");
+        msg_costmap_.data.clear();
         msg_costmap_.data.insert(msg_costmap_.data.end(), g_costmap_.begin(), g_costmap_.end());
         msg_costmap_.header.stamp = msg->header.stamp;
         pub_costmap_.publish(msg_costmap_);
-        msg_costmap_.data.clear();
     }
+}
+
+void globalCostmapCB(const nav_msgs::OccupancyGrid::ConstPtr &msg)
+{
+    if (std::fabs(msg->info.origin.position.x - msg_global_costmap_.info.origin.position.x) < 0.001 && std::fabs(msg->info.origin.position.y - msg_global_costmap_.info.origin.position.y) && msg->info.width == msg_global_costmap_.info.width && msg->info.height == msg_global_costmap_.info.height)
+    {
+        // same global costmap
+        return;
+    }
+    msg_global_costmap_ = *msg;
+}
+
+void pathCB(const nav_msgs::Path::ConstPtr &msg)
+{
+    nav_msgs::Path obstacle_path = *msg;
+    nav_msgs::OccupancyGrid global_costmap = msg_global_costmap_;
+    tf_map2base_.setOrigin(tf::Vector3(msg_cur_pose_.pose.position.x, msg_cur_pose_.pose.position.y, msg_cur_pose_.pose.position.z));
+    tf_map2base_.setRotation(tf::Quaternion(msg_cur_pose_.pose.orientation.x, msg_cur_pose_.pose.orientation.y, msg_cur_pose_.pose.orientation.z, msg_cur_pose_.pose.orientation.w));
+    tf::Transform tf_m2l = tf_map2base_ * tf_base2laser_;
+    tf::Point lp, gp;
+    int gi = 0, gj = 0;
+    // 将 local costmap 添加到 global costmap 中
+    for (int li = 0; li < msg_costmap_.info.width; li++)
+    {
+        for (int lj = 0; lj < msg_costmap_.info.height; lj++)
+        {
+            lp.setX(msg_costmap_.info.origin.position.x + li * msg_costmap_.info.resolution);
+            lp.setY(msg_costmap_.info.origin.position.y + lj * msg_costmap_.info.resolution);
+            gp = tf_m2l * lp;
+            gi = std::floor((gp.getX() - global_costmap.info.origin.position.x) / global_costmap.info.resolution);
+            gj = std::floor((gp.getY() - global_costmap.info.origin.position.y) / global_costmap.info.resolution);
+            if (gi >= 0 && gi < global_costmap.info.width && gj >= 0 && gj < global_costmap.info.height)
+            {
+                global_costmap.data[gj * global_costmap.info.width + gi] += msg_costmap_.data[lj * msg_costmap_.info.width + li];
+            }
+        }
+    }
+
+    bool flag;
+    for (int i = 0; i < msg->poses.size(); i++)
+    {
+        flag = true;
+        gi = std::floor((msg->poses[i].pose.position.x - global_costmap.info.origin.position.x) / global_costmap.info.resolution);
+        gj = std::floor((msg->poses[i].pose.position.y - global_costmap.info.origin.position.y) / global_costmap.info.resolution);
+        for (int x = (gi - 5 > 0 ? gi - 5 : 0); x < (gi + 5 < global_costmap.info.width ? gi + 5 : global_costmap.info.width) && flag; x++)
+        {
+            for (int y = (gj - 5 > 0 ? gj - 5 : 0); y < (gj + 5 < global_costmap.info.height ? gj + 5 : global_costmap.info.height); y++)
+            {
+                if (global_costmap.data[y * global_costmap.info.width + x] > 20)
+                {
+                    obstacle_path.poses[i].pose.position.z = -1;
+                    flag = false;
+                    break;
+                }
+            }
+        }
+    }
+    pub_obstacle_path_.publish(obstacle_path);
 }
 
 void cfgCB(const gen_costmap::GenCostmapConfig &config, uint32_t level)
@@ -299,8 +361,11 @@ int main(int argc, char **argv)
 
     ros::Subscriber sub_points = nh.subscribe("/lslidar_point_cloud", 10, pointsCB);
     ros::Subscriber sub_cur_pose = nh.subscribe("/ndt/current_pose", 50, poseCB);
+    ros::Subscriber sub_globa_costmap = nh.subscribe("/global_costmap", 1, globalCostmapCB);
+    ros::Subscriber sub_path = nh.subscribe("/path", 1, pathCB);
     // ros::Subscriber sub_map = nh.subscribe("/pc_map", 1, mapCB);
     pub_costmap_ = nh.advertise<nav_msgs::OccupancyGrid>("/costmap", 1);
+    pub_obstacle_path_ = nh.advertise<nav_msgs::Path>("/obstacle_path", 1);
     // pub_test_ = nh.advertise<geometry_msgs::PoseStamped>("/pub_test", 1);
     // pub_pc_ = nh.advertise<sensor_msgs::PointCloud2>("/pub_pc", 1);
     dynamic_reconfigure::Server<gen_costmap::GenCostmapConfig> cfg_server;

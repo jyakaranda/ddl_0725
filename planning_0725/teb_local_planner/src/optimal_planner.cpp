@@ -1132,6 +1132,7 @@ bool TebOptimalPlanner::getVelocityCommand(double& vx, double& vy, double& omega
 	  
   // Get velocity from the first two configurations
   extractVelocity(teb_.Pose(0), teb_.Pose(1), dt, vx, vy, omega);
+  ROS_INFO("cmd %f %f %f", vx, vy, omega);
   return true;
 }
 

@@ -45,7 +45,7 @@ int main(int argc, char** argv)
     ros::NodeHandle n("~");
     tf_ = new tf::TransformListener(ros::Duration(10));
     config.loadRosParamFromNodeHandle(n);
-    ros::Timer planner_timer = n.createTimer(ros::Duration(0.05),LocalPlanCB);
+    ros::Timer planner_timer = n.createTimer(ros::Duration(0.2),LocalPlanCB);
     
     dynamic_recfg = boost::make_shared< dynamic_reconfigure::Server<TebLocalPlannerReconfigureConfig> >(n);
     dynamic_reconfigure::Server<TebLocalPlannerReconfigureConfig>::CallbackType cb = boost::bind(CB_reconfigure, _1, _2);
@@ -77,6 +77,7 @@ void GoalCB(const geometry_msgs::PoseStamped::ConstPtr& msg){
     geometry_msgs::PoseStamped temp = *msg;
     if(temp.pose.position.x != goal.pose.position.x || temp.pose.position.y != goal.pose.position.y){
         goal = temp;
+       // ROS_INFO("%f %f %f %f", temp.pose.orientation.x, temp.pose.orientation.y,temp.pose.orientation.z, temp.pose.orientation.w);
         new_goal = true;
         global_plan->clear();
         local_plan->clear(); 
@@ -116,6 +117,7 @@ void GlobalPlanCB(const nav_msgs::Path& msg){
             plan_point.header.seq = i+1;
             plan_point.header.frame_id="map";
             global_plan->push_back(plan_point);
+            //ROS_INFO("%f %f %f %f",  plan_point.pose.orientation.x, plan_point.pose.orientation.y, plan_point.pose.orientation.z, plan_point.pose.orientation.w);
         }
         new_goal=false;
         new_global_plan = true;
@@ -180,7 +182,7 @@ void LocalPlanCB(const ros::TimerEvent& e){
                 
             }
             if(teb_local.computeVelocityCommands(cmd_vel)){//compute中实现了可视化，publish planner,global_planne
-                ROS_INFO("%f", cmd_vel.linear.x);
+                ROS_INFO("%f %f %f", cmd_vel.linear.x,cmd_vel.linear.y, cmd_vel.angular.z );
 
                 ROS_DEBUG_NAMED( "move_base", "Got a valid command from the local planner: %.3lf, %.3lf, %.3lf",
                                 cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.angular.z );

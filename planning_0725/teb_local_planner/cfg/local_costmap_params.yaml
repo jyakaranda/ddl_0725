@@ -5,8 +5,8 @@ local_costmap:
   publish_frequency: 2.0
   static_map: false
   rolling_window: true
-  width: 10
-  height: 10
+  width: 20
+  height: 20
   resolution: 0.1
   transform_tolerance: 1.0
  # obstacle_layer:

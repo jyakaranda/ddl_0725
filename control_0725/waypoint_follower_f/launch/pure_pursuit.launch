@@ -4,11 +4,12 @@
 	<arg name="is_linear_interpolation" default="True"/>
 	<arg name="const_lookahead_distance_" default="4.0"/>
 	<arg name="const_velocity" default="1.0"/>
-	<arg name="lookahead_distance_ratio" default="1.0"/>
+	<arg name="lookahead_distance_ratio" default="3.0"/>
 	<arg name="minimum_lookahead_distance" default="1.0"/>
 	<arg name="trajectory" default="$(find ndt_localization)/trajectories/2018-10-22-20-16-18.traj"/>
 	<!-- rosrun waypoint_follower pure_pursuit -->
 	<node pkg="waypoint_follower_f" type="pure_pursuit" name="pure_pursuit" output="screen">
+		<remap from="/sim_pose" to="/ndt/current_pose" />
 		<param name="is_linear_interpolation" value="$(arg is_linear_interpolation)"/>
 		<param name="const_lookahead_distance_" value="$(arg const_lookahead_distance_)"/>
 		<param name="const_velocity" value="$(arg const_velocity)"/>
@@ -16,7 +17,9 @@
 		<param name="minimum_lookahead_distance" value="$(arg minimum_lookahead_distance)"/>
 	</node>
   	
-	<node pkg="waypoint_follower_f" type="pub_path" name="pub_path" output="screen"/>
+	<node pkg="waypoint_follower_f" type="pub_path" name="pub_path" output="screen">
+		<remap from="/sim_pose" to="/ndt/current_pose" />
+	</node>
 	<node pkg="pf_localization" type="trajectory_loader.py" name="trajectory_loader" output="screen">
 		<param name="trajectory" value="$(arg trajectory)"/>
 	</node>

@@ -75,9 +75,6 @@ void hallSensorCB(const std_msgs::Bool::ConstPtr &msg)
     }
     else
     {
-      pre_pre_x = pre_x;
-      pre_x = cur_x;
-      pre_p = cur_p;
       // Smooth filter, in the premise that velocity won't change drastically.
       cur_x = (std::pow(pre_pre_x, 2) + std::pow(pre_x, 2) + std::pow(cur_x, 2)) / (pre_pre_x + pre_x + cur_x);
       // double pre_pre_q = 1. / (std::fabs(cur_x - pre_pre_x) + param_q);
@@ -95,6 +92,9 @@ void hallSensorCB(const std_msgs::Bool::ConstPtr &msg)
     // ROS_INFO("count: %d", count);
     start = ros::Time::now();
     count = 0;
+    pre_pre_x = pre_x;
+    pre_x = cur_x;
+    pre_p = cur_p;
   }
 }
 

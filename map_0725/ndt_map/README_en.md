@@ -2,7 +2,7 @@
 
 ## Introduction
 
-参考 Autoware 的 ndt_mapping 和 lego_loam 的回环检测实现的建图包。NDT 和 lego_loam 原理见博客。
+SLAM package using NDT registration library of Autoware with loop-closure detection (odometry based) referenced from lego_loam.
 
 loop-closure enabled map cloud
 ![loop_closure_enabled_1](./img/loop_closure_enabled_1.png)
@@ -17,7 +17,7 @@ loop-closure disabled trajectory
 
 - [gtsam](https://github.com/borglab/gtsam/releases)(Georgia Tech Smoothing and Mapping library, 4.0.0-alpha2)
 - [ndt_cpu](https://github.com/autowarefoundation/autoware/tree/master/ros/src/computing/perception/localization/lib/ndt_cpu)
-- [ndt_gpu](https://github.com/autowarefoundation/autoware/tree/master/ros/src/computing/perception/localization/lib/ndt_gpu)
+- [ndt_gpu](https://github.com/autowarefoundation/autoware/tree/master/ros/src/computing/perception/localization/lib/ndt_gpu)(not used currently)
 
 ## Usage
 
@@ -43,23 +43,23 @@ roslaunch ndt_map test.launch
 2. Play existing bag files:
 
 ```shell
-rosbag play test_0515.bag --clock --topics
+rosbag play test_0515.bag --clock
 ```
 
 ## Issues
 
-- 线程安全
-- 优化点云配准的初始估计
-- 增加非里程计的初始估计（目前在 use_odom 设为 false 的情况下有问题）
-- pitch 的累计误差导致高度漂移问题
-- 目前位姿有抖动情况，尤其是 z 轴，还未检查问题（与定位时的抖动比较像，应该可以一起解决）
+- thread-safe
+- optimize initial guess in point cloud registration
+- add other initial guess support(use_odom need to be set true currently)
+- error estimation of pitch will cause accumulated error of height estimation
+- a little bit shake in pose estimation when playing test_0515.bag (especially in z axis), haven't check it out yet
 
 ## TODOs
 
-- 以`均值-协方差`格式存储/加载 NDT 地图
-- 基于特征点的回环检测
-- 添加 gpu 支持（在 ndt_gpu 库的基础上修改完成）
-- 学习借鉴 Apollo NDT 定位的工程 trick
+- save/load NDT map using $(\mu,\Sigma)$ format
+- add appearence based loop-closure detection support
+- add gpu support (based on modified ndt_gpu lib)
+- learning engineering tricks of NDT localization implementation in Apollo
 
 ## Reference
 

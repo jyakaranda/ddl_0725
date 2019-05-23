@@ -40,7 +40,7 @@ loop-closure disabled trajectory
 roslaunch ndt_map test.launch
 ```
 
-2. Play existing bag files:
+2. Play existing bag files [test_0515.bag](https://drive.google.com/file/d/1Y6KR9FUQggcyhvGsnkv7zpYQGvc7dQR_/view?usp=sharing):
 
 ```shell
 rosbag play test_0515.bag --clock --topics
